@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ระบบประเมิน Supplier – EV DC Quick Charger (POC Scorecard)</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --navy: #0f2b48;
+      --navy-soft: #1b3f66;
+      --green: #10b981;
+      --green-dark: #047857;
+      --ink: #1e293b;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --bg: #f4f6f9;
+      --amber: #f59e0b;
+      --rose: #e11d48;
+      --blue: #2563eb;
+    }
+    body { font-family: 'Sarabun', sans-serif; background: var(--bg); color: var(--ink); }
+    .btn:focus-visible, .form-select:focus-visible, .form-control:focus-visible, .nav-link:focus-visible {
+      outline: 3px solid rgba(16,185,129,.55); outline-offset: 2px;
+    }
+
+    /* ── Navbar ── */
+    .app-nav { background: var(--navy); color: #fff; }
+    .app-nav .brand-title { font-weight: 700; font-size: 1.05rem; line-height: 1.2; }
+    .app-nav .brand-sub { font-size: .78rem; color: #b8c7da; }
+    .nav-chip { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; padding: .25rem .75rem; font-size: .85rem; font-weight: 600; }
+    .nav-chip.dept { background: var(--green); color: #fff; }
+    .nav-chip.vendor { background: rgba(255,255,255,.14); color: #fff; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .conn { font-size: .8rem; color: #b8c7da; display: inline-flex; align-items: center; gap: .4rem; }
+    .conn .dot { width: 9px; height: 9px; border-radius: 50%; background: #94a3b8; }
+    .conn.ok .dot { background: var(--green); }
+    .conn.demo .dot { background: var(--amber); }
+    .conn.error .dot { background: var(--rose); }
+    .btn-light-outline { color: #fff; border: 1px solid rgba(255,255,255,.35); background: transparent; }
+    .btn-light-outline:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+    .btn-navy { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .btn-navy:hover { background: var(--navy-soft); border-color: var(--navy-soft); color: #fff; }
+    .btn-green { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+    .btn-green:hover { background: #0d9f6e; border-color: #0d9f6e; color: #fff; }
+
+    /* ── Tabs ── */
+    .main-tabs .nav-link { color: var(--muted); font-weight: 600; border-radius: 8px; }
+    .main-tabs .nav-link.active { background: var(--navy); color: #fff; }
+
+    .panel { background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+    .muted { color: var(--muted); }
+    .fs-7 { font-size: .875rem; }
+
+    /* ── Form: category blocks ── */
+    .cat-head { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; padding: .9rem 1.1rem; border-bottom: 1px solid var(--line); background: #f8fafc; border-radius: 12px 12px 0 0; }
+    .cat-head .cat-title { font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--navy); }
+    .cat-weight { font-size: .8rem; font-weight: 600; background: #e8eef5; color: var(--navy); padding: .15rem .6rem; border-radius: 999px; }
+    .role-badge { font-size: .78rem; border: 1px solid var(--line); background: #fff; color: var(--muted); padding: .1rem .55rem; border-radius: 999px; }
+    .role-badge.me { border-color: var(--green); background: #ecfdf5; color: var(--green-dark); font-weight: 600; }
+    .cat-locked .cat-head { cursor: pointer; width: 100%; text-align: left; border: 0; border-radius: 12px; font: inherit; color: inherit; }
+    .cat-locked .cat-head .cat-title { color: var(--muted); }
+    .cat-locked .lock-note { margin-left: auto; font-size: .8rem; color: var(--muted); }
+    .cat-body { padding: 1rem 1.1rem 0; }
+
+    .q-item { padding-bottom: 1.25rem; margin-bottom: 1.25rem; border-bottom: 1px dashed var(--line); }
+    .q-item:last-child { border-bottom: 0; margin-bottom: 0; }
+    .q-item.is-missing { outline: 2px solid var(--rose); outline-offset: 6px; border-radius: 8px; }
+    .q-code { display: inline-block; min-width: 2.2rem; text-align: center; font-weight: 700; font-size: .85rem; color: #fff; background: var(--navy); border-radius: 6px; padding: .1rem .4rem; margin-right: .5rem; }
+    .q-title { font-weight: 600; font-size: 1rem; }
+    .q-max { font-size: .8rem; color: var(--muted); white-space: nowrap; }
+    .q-guide { font-size: .88rem; color: #475569; margin: .45rem 0 .25rem; max-width: 75ch; }
+    .q-evidence { font-size: .8rem; color: var(--muted); margin: 0 0 .8rem; max-width: 90ch; }
+
+    .lv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .6rem; }
+    .lv { display: block; margin: 0; cursor: pointer; }
+    .lv-body { position: relative; height: 100%; padding: .65rem .75rem; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; transition: border-color .15s, background-color .15s; }
+    .lv:hover .lv-body { border-color: #94a3b8; }
+    .lv input:focus-visible + .lv-body { outline: 3px solid rgba(16,185,129,.55); outline-offset: 2px; }
+    .lv input:checked + .lv-body { border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); background: #f0fdf8; }
+    .lv input:disabled + .lv-body { opacity: .6; cursor: not-allowed; background: #f8fafc; }
+    .lv-top { display: flex; align-items: center; gap: .5rem; }
+    .lv-chip { width: 26px; height: 26px; flex: none; border-radius: 50%; color: #fff; font-weight: 700; font-size: .85rem; display: inline-flex; align-items: center; justify-content: center; }
+    .lv-chip.c1 { background: var(--rose); } .lv-chip.c2 { background: var(--amber); } .lv-chip.c3 { background: #64748b; }
+    .lv-chip.c4 { background: var(--blue); } .lv-chip.c5 { background: var(--green); }
+    .lv-name { font-weight: 600; font-size: .85rem; line-height: 1.2; }
+    .lv-tick { margin-left: auto; color: var(--green); display: none; }
+    .lv input:checked + .lv-body .lv-tick { display: inline; }
+    .lv ul { margin: .5rem 0 0; padding-left: 1.05rem; font-size: .78rem; line-height: 1.45; color: #475569; }
+    .lv ul li + li { margin-top: .2rem; }
+
+    .save-bar { position: sticky; bottom: 0; z-index: 20; background: #fff; border-top: 1px solid var(--line); padding: .75rem 1rem; margin-top: 1rem; border-radius: 12px 12px 0 0; box-shadow: 0 -6px 16px rgba(15,43,72,.06); }
+    .progress { height: 8px; }
+    .progress-bar { background: var(--green); }
+
+    /* ── Dashboard ── */
+    .kpi { padding: 1.1rem 1.2rem; height: 100%; }
+    .kpi-label { font-size: .85rem; color: var(--muted); font-weight: 600; margin-bottom: .35rem; }
+    .kpi-value { font-size: 2.5rem; font-weight: 700; line-height: 1.05; color: var(--navy); font-variant-numeric: tabular-nums; }
+    .kpi-sub { font-size: .8rem; color: var(--muted); margin-top: .35rem; }
+    .grade-A, .grade-B { color: var(--green) !important; } .grade-C { color: var(--amber) !important; } .grade-D, .grade-F { color: var(--rose) !important; }
+    .dchip { display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .55rem; border-radius: 999px; font-size: .78rem; border: 1px solid var(--line); color: var(--muted); background: #fff; }
+    .dchip.done { background: #ecfdf5; border-color: #a7f3d0; color: var(--green-dark); font-weight: 600; }
+    .decision-line { font-size: .85rem; display: flex; gap: .4rem; align-items: baseline; }
+    .decision-line .fa-circle-check { color: var(--green); } .decision-line .fa-circle-xmark { color: var(--rose); } .decision-line .fa-clock { color: var(--amber); }
+
+    .table { --bs-table-bg: transparent; }
+    .table th { font-size: .8rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
+    .table td { font-size: .88rem; }
+    td.na { background: repeating-linear-gradient(135deg, #f8fafc, #f8fafc 4px, #f1f5f9 4px, #f1f5f9 8px); }
+    tr.row-current { background: #f0fdf8; }
+    tr.row-click { cursor: pointer; }
+    .mini-bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; min-width: 80px; }
+    .mini-bar > span { display: block; height: 100%; background: var(--green); }
+    .chart-wrap { position: relative; height: 340px; }
+
+    /* ── Modal ── */
+    .modal-header { border-bottom: 0; }
+    .sel-hint { font-size: .85rem; background: #f0f9ff; border: 1px solid #bae6fd; color: #0c4a6e; border-radius: 8px; padding: .5rem .75rem; }
+    .toast-container { z-index: 2000; }
+
+    @media (max-width: 575.98px) {
+      .kpi-value { font-size: 2.1rem; }
+      .nav-chip.vendor { max-width: 200px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+
+<!-- ═════════════ Navbar ═════════════ -->
+<nav class="app-nav py-2">
+  <div class="container-xxl d-flex flex-wrap align-items-center gap-3">
+    <div class="d-flex align-items-center gap-2 me-auto">
+      <i class="fa-solid fa-charging-station fa-lg" style="color: var(--green)"></i>
+      <div>
+        <div class="brand-title">ประเมิน Supplier – EV DC Quick Charger 180–200 kW</div>
+        <div class="brand-sub">POC Technical Evaluation Scorecard</div>
+      </div>
+    </div>
+    <span class="conn demo" id="connPill"><span class="dot"></span><span id="connText">โหมดสาธิต</span></span>
+    <span class="nav-chip dept d-none" id="navDept"><i class="fa-solid fa-user-tag"></i><span id="navDeptText"></span></span>
+    <span class="nav-chip vendor d-none" id="navVendor"><i class="fa-solid fa-building"></i><span id="navVendorText"></span></span>
+    <button class="btn btn-sm btn-light-outline d-none" id="btnChange"><i class="fa-solid fa-right-left me-1"></i>เปลี่ยน Vendor/แผนก</button>
+    <button class="btn btn-sm btn-light-outline" id="btnSettings" aria-label="ตั้งค่า"><i class="fa-solid fa-gear"></i></button>
+  </div>
+</nav>
+
+<div class="container-xxl py-3" id="appRoot">
+
+  <div class="alert alert-warning d-none fs-7 py-2" id="demoBanner">
+    <i class="fa-solid fa-triangle-exclamation me-2"></i>ยังไม่ได้เชื่อมต่อ Google Sheets – ข้อมูลที่บันทึกจะเก็บไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น
+    <a href="#" id="demoSettingsLink" class="alert-link ms-1">ตั้งค่า Web App URL</a>
+  </div>
+
+  <ul class="nav nav-pills main-tabs gap-2 mb-3" id="mainTabs" role="tablist">
+    <li class="nav-item" role="presentation"><button class="nav-link active" id="tabFormBtn" data-bs-toggle="pill" data-bs-target="#paneForm" type="button" role="tab"><i class="fa-solid fa-clipboard-list me-2"></i>แบบประเมิน</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tabDashBtn" data-bs-toggle="pill" data-bs-target="#paneDash" type="button" role="tab"><i class="fa-solid fa-chart-pie me-2"></i>Summary Dashboard</button></li>
+  </ul>
+
+  <div class="tab-content">
+
+    <!-- ═════════════ แบบประเมิน ═════════════ -->
+    <div class="tab-pane fade show active" id="paneForm" role="tabpanel">
+      <div class="panel p-3 mb-3">
+        <div class="row g-3 align-items-center">
+          <div class="col-lg-7">
+            <div class="muted fs-7">กำลังประเมิน</div>
+            <div class="fs-5 fw-bold" id="formSupplier">–</div>
+            <div class="fs-7 muted" id="formModel">–</div>
+          </div>
+          <div class="col-lg-5">
+            <div class="fs-7"><span class="muted">แผนกผู้ประเมิน:</span> <strong id="formDept">–</strong></div>
+            <div class="fs-7"><span class="muted">หมวดที่ประเมินได้:</span> <strong id="formCats">–</strong></div>
+          </div>
+        </div>
+        <div class="alert alert-info fs-7 py-2 mt-3 mb-0 d-none" id="existingNotice"></div>
+      </div>
+
+      <div id="rubricContainer"></div>
+
+      <div class="panel p-3 mb-3">
+        <label for="evalComment" class="form-label fw-semibold">ข้อสังเกตเพิ่มเติม (ไม่บังคับ)</label>
+        <textarea id="evalComment" class="form-control" rows="3" placeholder="เช่น ผลทดสอบหน้างาน ข้อกังวล หรือเอกสารที่ขอเพิ่ม"></textarea>
+      </div>
+
+      <div class="save-bar">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+          <div class="flex-grow-1" style="min-width: 220px;">
+            <div class="d-flex justify-content-between fs-7 mb-1"><span id="progressText">ตอบแล้ว 0/0 ข้อ</span><span class="muted" id="deptScoreText"></span></div>
+            <div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+          </div>
+          <button class="btn btn-green px-4" id="btnSave"><i class="fa-solid fa-cloud-arrow-up me-2"></i>บันทึกผลการประเมิน</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════ Summary Dashboard ═════════════ -->
+    <div class="tab-pane fade" id="paneDash" role="tabpanel">
+      <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+        <div>
+          <label for="dashSupplier" class="form-label fs-7 mb-1">Supplier ที่ต้องการดูผล</label>
+          <select id="dashSupplier" class="form-select" style="min-width: 280px;"></select>
+        </div>
+        <button class="btn btn-navy" id="btnSync"><i class="fa-solid fa-rotate me-2" id="syncIcon"></i>ดึงข้อมูลล่าสุด</button>
+        <span class="fs-7 muted ms-sm-auto" id="lastSync"></span>
+      </div>
+
+      <div class="alert alert-light border fs-7 d-none" id="dashEmpty">
+        <i class="fa-regular fa-folder-open me-2"></i>ยังไม่มีผลประเมินของ Supplier นี้ – เริ่มได้ที่แท็บ “แบบประเมิน”
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6 col-xl-3"><div class="panel kpi">
+          <div class="kpi-label">คะแนนรวมถ่วงน้ำหนัก</div>
+          <div class="kpi-value" id="kpiTotal">–</div>
+          <div class="progress mt-2"><div class="progress-bar" id="kpiBar" style="width:0%"></div></div>
+          <div class="kpi-sub" id="kpiTotalSub">–</div>
+        </div></div>
+        <div class="col-sm-6 col-xl-3"><div class="panel kpi">
+          <div class="kpi-label">เกรด</div>
+          <div class="kpi-value" id="kpiGrade">–</div>
+          <div class="kpi-sub">A ≥ 90 · B ≥ 80 · C ≥ 70 · D ≥ 60 · F &lt; 60</div>
+        </div></div>
+        <div class="col-sm-6 col-xl-3"><div class="panel kpi">
+          <div class="kpi-label">สถานะการประเมิน</div>
+          <div class="kpi-value" id="kpiDepts">0/5</div>
+          <div class="d-flex flex-wrap gap-1 mt-2" id="kpiDeptChips"></div>
+        </div></div>
+        <div class="col-sm-6 col-xl-3"><div class="panel kpi">
+          <div class="kpi-label">ผลตามเกณฑ์คะแนน POC</div>
+          <div class="fs-5 fw-bold" id="kpiDecision">–</div>
+          <div class="mt-2 d-grid gap-1" id="kpiDecisionLines"></div>
+          <div class="kpi-sub">ยังไม่รวมเกณฑ์ชี้ขาด (Mandatory Gate) ซึ่งต้องตรวจแยก</div>
+        </div></div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-lg-6"><div class="panel p-3 h-100">
+          <h2 class="fs-6 fw-bold mb-2">คะแนนแต่ละหมวดเทียบกับคะแนนเต็ม</h2>
+          <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
+        </div></div>
+        <div class="col-lg-6"><div class="panel p-3 h-100">
+          <h2 class="fs-6 fw-bold mb-2">สรุปรายหมวด</h2>
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead><tr><th>หมวด</th><th>ผู้ประเมิน</th><th class="text-end">คะแนน</th><th style="width:110px">% ของเต็ม</th></tr></thead>
+              <tbody id="catTableBody"></tbody>
+            </table>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="panel p-3 mb-3">
+        <h2 class="fs-6 fw-bold mb-2">คะแนนรายข้อ (เฉลี่ยจากแผนกที่ประเมินแล้ว)</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr>
+              <th>ข้อ</th><th>หัวข้อ</th>
+              <th class="text-center">Engineering</th><th class="text-center">BU Ev</th><th class="text-center">MMC</th><th class="text-center">IT</th><th class="text-center">Purchase</th>
+              <th class="text-center">เฉลี่ย</th><th class="text-end">ได้ / เต็ม</th>
+            </tr></thead>
+            <tbody id="itemTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel p-3">
+        <h2 class="fs-6 fw-bold mb-2">เปรียบเทียบทุก Supplier</h2>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead><tr><th>Supplier</th><th>Brand / Model</th><th class="text-end">คะแนนรวม</th><th class="text-center">เกรด</th><th class="text-end">หมวด 5 (SLA)</th><th class="text-center">แผนกที่ประเมิน</th></tr></thead>
+            <tbody id="compareBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════ Modal: เลือกแผนกและ Supplier ═════════════ -->
+<div class="modal fade" id="selectModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="selectTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5 fw-bold" id="selectTitle">เลือกแผนกและ Supplier ที่จะประเมิน</h2>
+      </div>
+      <div class="modal-body pt-0">
+        <div class="mb-3">
+          <label for="selDept" class="form-label fw-semibold">แผนกผู้ประเมิน</label>
+          <select id="selDept" class="form-select">
+            <option value="">เลือกแผนก…</option>
+            <option>Engineering</option><option>BU Ev</option><option>MMC</option><option>IT</option><option>Purchase</option>
+          </select>
+          <div class="sel-hint mt-2 d-none" id="selDeptHint"></div>
+        </div>
+        <div class="mb-3">
+          <label for="selVendor" class="form-label fw-semibold">Supplier</label>
+          <select id="selVendor" class="form-select"><option value="">กำลังโหลดรายชื่อ…</option></select>
+        </div>
+        <div class="mb-1">
+          <label for="selName" class="form-label fw-semibold">ชื่อผู้ประเมิน <span class="muted fw-normal">(ไม่บังคับ)</span></label>
+          <input id="selName" class="form-control" maxlength="80" placeholder="เช่น สมชาย ใจดี">
+        </div>
+        <div class="fs-7 muted mt-3" id="selNoUrl"><i class="fa-solid fa-circle-info me-1"></i>ยังไม่ได้ตั้งค่า Web App URL – ใช้รายชื่อตัวอย่างจากไฟล์ Scorecard <a href="#" id="selOpenSettings">ตั้งค่า</a></div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-outline-secondary d-none" id="selCancel">ยกเลิก</button>
+        <button type="button" class="btn btn-green px-4" id="selStart" disabled>เริ่มประเมิน</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════ Modal: ตั้งค่า ═════════════ -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5 fw-bold" id="settingsTitle">ตั้งค่าการเชื่อมต่อ Google Sheets</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+      </div>
+      <div class="modal-body pt-0">
+        <label for="urlInput" class="form-label fw-semibold">Google Apps Script Web App URL</label>
+        <input id="urlInput" class="form-control" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+        <div class="invalid-feedback">URL ต้องขึ้นต้นด้วย https://script.google.com/ และลงท้ายด้วย /exec</div>
+        <div class="fs-7 muted mt-2">เว้นว่างไว้เพื่อใช้โหมดสาธิต (เก็บข้อมูลในเบราว์เซอร์เครื่องนี้เท่านั้น) ค่านี้จะถูกจำไว้ในเบราว์เซอร์ของคุณ</div>
+        <div class="fs-7 mt-3 d-none" id="testResult"></div>
+      </div>
+      <div class="modal-footer border-0 justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" id="btnTestUrl"><i class="fa-solid fa-plug me-2"></i>ทดสอบการเชื่อมต่อ</button>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-danger d-none" id="btnClearDemo">ล้างข้อมูลสาธิต</button>
+          <button type="button" class="btn btn-navy" id="btnSaveUrl">บันทึกและดึงข้อมูล</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════ Modal: ยืนยันรหัสผ่านเข้า Summary Dashboard ═════════════ -->
+<div class="modal fade" id="passcodeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="passcodeTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-6 fw-bold" id="passcodeTitle"><i class="fa-solid fa-lock me-2 text-warning"></i>กรอกรหัสผ่านเข้าใช้งาน</h2>
+      </div>
+      <div class="modal-body pt-0">
+        <div class="mb-2">
+          <label for="dashPasscodeInput" class="form-label fs-7 fw-semibold">รหัสผ่าน Dashboard</label>
+          <input type="password" id="dashPasscodeInput" class="form-control" placeholder="กรอกรหัสผ่าน..." autocomplete="off">
+          <div class="invalid-feedback fs-7">รหัสผ่านไม่ถูกต้อง</div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0 justify-content-end">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCancelPasscode">ยกเลิก</button>
+        <button type="button" class="btn btn-sm btn-navy px-3" id="btnConfirmPasscode">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toasts" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════
+   ตั้งค่า: วาง Web App URL ที่ได้จากการ Deploy Apps Script ตรงนี้
+   (ผู้ใช้ทุกคนจะเชื่อมต่อให้อัตโนมัติ ไม่ต้องกรอกเอง)
+   ═══════════════════════════════════════════════════════════ */
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxaXZDV8OjIjclDO-51sJrTJ0GFq7Vi9uz4pswHpzBx07QI7HOyJqPc_SXbBXec1hC9Dg/exec';
+
+/* ───── ข้อมูลแบบประเมิน (สร้างจากไฟล์ ev-charger-poc-scorecard_for_Scoring.xlsx) ───── */
+const CATEGORIES = [
+ {
+  "id": 1,
+  "title": "การตรวจสภาพทางกายภาพและคุณภาพฮาร์ดแวร์",
+  "weight": 15,
+  "items": [
+   {
+    "id": "1.1",
+    "title": "โครงสร้างตู้และความทนทานภายนอก",
+    "guide": "ตรวจสอบมาตรฐาน IP55, IK08 ความหนาเหล็ก รอยเชื่อม การเคลือบสีกันสนิม และการซีลขอบยางป้องกันน้ำและความชื้นรอบตู้",
+    "max": 5,
+    "roles": "Eng , BU",
+    "levels": {
+     "5": [
+      "โครงสร้างเหล็ก/สแตนเลสมาตรฐานอุตสาหกรรมสูง รอยเชื่อมเรียบเนียน เคลือบสีกันสนิมทนไอสารเคมี",
+      "ซีลยาง EPDM สองชั้นรอบประตู/จุดร้อยสาย ปิดล็อกแน่นหนา",
+      "มีใบรับรอง IP55 และ IK08 จากสถาบันทดสอบสากล",
+      "มีทางระบายน้ำหยดป้องกันน้ำขังหน้าตู้สมบูรณ์"
+     ],
+     "4": [
+      "โครงสร้างตู้แข็งแรงตามมาตรฐาน IP55 และ IK08",
+      "ซีลยางรอบตู้ปิดสนิท รอยต่อประกบมิดชิด ป้องกันน้ำซึมเข้าในสถานีบริการน้ำมันได้ดี",
+      "มีใบรับรองมาตรฐานครบถ้วนตาม TOR"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] ผ่านเกณฑ์ IP55 และ IK08 ตามเอกสาร",
+      "แต่งานประกอบภายนอกบางจุดเก็บรายละเอียดไม่ประณีต หรือตัวล็อกตู้ต้องใช้แรงกดมากกว่าปกติ"
+     ],
+     "2": [
+      "ซีลยางบางจุดปิดไม่แนบสนิท หรือพบช่องว่างบริเวณจุดต่อสายไฟที่เสี่ยงต่อความชื้น/ฝุ่นละอองสะสม",
+      "ความหนาของเหล็กหรือการพ่นสีมีตำหนิ"
+     ],
+     "1": [
+      "ไม่สามารถแสดงใบรับรอง IP55/IK08 หน้างานได้ หรือพบข้อบกพร่องรุนแรง เช่น ตัวตู้บิดเบี้ยว ฝาตู้ปิดไม่สนิท หรือมีช่องโหว่ที่น้ำไหลเข้าตู้ได้"
+     ]
+    },
+    "evidence": "ใบรับรอง IP55/IK08, ตรวจสภาพรอยเชื่อม, ตรวจขอบยางซีล EPDM, ทดสอบล็อกประตู"
+   },
+   {
+    "id": "1.2",
+    "title": "ระบบรอกดึงสาย (Retractor) และสายชาร์จ",
+    "guide": "สายชาร์จยาวไม่น้อยกว่า 5 เมตร, ทดสอบความนุ่มนวลและแรงดึงกลับของ Retractor สายต้องไม่ลากพื้น หัวชาร์จ CCS2 จับถนัดมือ",
+    "max": 5,
+    "roles": "Eng , BU",
+    "levels": {
+     "5": [
+      "สายชาร์จยาว >= 5 เมตร",
+      "รอก Retractor ทำงานด้วยแรงดึงที่นุ่มนวล ผู้ใช้ทุกสรีระดึงใช้งานได้โดยไม่ต้องออกแรงมาก",
+      "เมื่อปล่อยมือ สายถูกดึงกลับเข้าตำแหน่งแขวน โดยหัวชาร์จและสายไม่แตะหรือลากพื้นคอนกรีต 100%"
+     ],
+     "4": [
+      "สายชาร์จยาว >= 5 เมตร",
+      "รอก Retractor ดึงสายกลับได้สมบูรณ์ ไม่ตกพื้น",
+      "อาจต้องใช้แรงดึงเริ่มต้นเล็กน้อย แต่คืนตัวได้เรียบร้อย"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] สายยาว >= 5 เมตร พร้อมระบบ Retractor",
+      "แรงดึงกลับค่อนข้างหน่วง หรือสายมีโอกาสแตะพื้นเล็กน้อยหากไม่ช่วยประคองสายเข้าที่"
+     ],
+     "2": [
+      "รอก Retractor ทำงานติดขัดในบางจังหวะ ดึงสายกลับไม่สุด ทำให้สายชาร์จกองสัมผัสพื้น เสี่ยงต่อการถูกรถเหยียบทับ"
+     ],
+     "1": [
+      "สายชาร์จยาวไม่ถึง 5 เมตร หรือไม่มีระบบ Retractor หรือรอกชำรุดไม่สามารถดึงสายกลับได้"
+     ]
+    },
+    "evidence": "ตลับเมตรวัดความยาวสายจริง, ทดสอบดึงสายและปล่อยคืน 10 ครั้ง, ตรวจสอบระยะพ้นพื้น"
+   },
+   {
+    "id": "1.3",
+    "title": "หน้าจอ Touchscreen และการจัดวางอุปกรณ์ภายใน",
+    "guide": "หน้าจอรองรับไทย-อังกฤษ ชัดเจนสู้แดดกลางแจ้ง, ตรวจสอบ Modular Design ถอดเปลี่ยนชิ้นส่วนง่าย และระบบ Forced-Air Cooling",
+    "max": 5,
+    "roles": "Eng , BU",
+    "levels": {
+     "5": [
+      "หน้าจอสว่างคมชัดสูงสู้แดดจัดกลางแจ้ง (>= 1,000 nits) ตอบสนองสัมผัสได้ทันที รองรับ 2 ภาษา",
+      "ภายในตู้จัดวางแบบ Modular Design แท้จริง สามารถถอดเปลี่ยน Power Module หน้างานได้ใน 15 นาที",
+      "แผ่นกรองฝุ่นถอดทำความสะอาดง่ายไม่ต้องใช้เครื่องมือพิเศษ"
+     ],
+     "4": [
+      "หน้าจอสู้แสงแดดได้ดี เมนู 2 ภาษา (ไทย-อังกฤษ)",
+      "ภายในจัดวางเป็นระเบียบ แยกโซนไฟฟ้าแรงสูงและวงจรควบคุมชัดเจน",
+      "ถอดเปลี่ยนโมดูลได้สะดวกโดยใช้เครื่องมือช่างพื้นฐาน"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] หน้าจอแสดงผล 2 ภาษาตาม TOR แต่าง่ายเมื่อมีแสงสะท้อนจ้า",
+      "ภายในระบายความร้อนด้วย Forced-Air Cooling แต่การเข้าถึงชิ้นส่วนด้านในเพื่อซ่อมต้องถอดอุปกรณ์อื่นที่ขวางทางก่อน"
+     ],
+     "2": [
+      "หน้าจอสัมผัสตอบสนองช้า หรือตัวอักษรภาษาไทยสระจม/ล้นกรอบ",
+      "การจัดวางอุปกรณ์ภายในหนาแน่น ซ่อมบำรุงหรือระบายความร้อนได้ยาก"
+     ],
+     "1": [
+      "หน้าจอไม่รองรับภาษาไทย หรือสัมผัสไม่ติด หรือพัดลมระบายความร้อนมีเสียงดังผิดปกติและไม่มีแผ่นกรองฝุ่น"
+     ]
+    },
+    "evidence": "ทดสอบสัมผัสหน้าจอกลางแดด, สลับภาษา UI, เปิดฝาตู้ตรวจ Modular Layout, จับเวลาถอดโมดูล"
+   }
+  ]
+ },
+ {
+  "id": 2,
+  "title": "การทดสอบสมรรถนะการชาร์จจริง",
+  "weight": 20,
+  "items": [
+   {
+    "id": "2.1",
+    "title": "การชาร์จพร้อมกัน 2 หัวจ่าย (Simultaneous Charging)",
+    "guide": "ชาร์จยานยนต์ไฟฟ้า 2 คันพร้อมกัน ตรวจสอบ Dynamic Load Balancing กำลังรวม 180-200 kW เสถียรภาพกระแส/แรงดัน และความร้อน",
+    "max": 8,
+    "roles": "Eng , BU",
+    "levels": {
+     "5": [
+      "เสียบชาร์จ EV 2 คันพร้อมกัน ระบบ Dynamic Power Sharing จัดสรรพลังงานเฉลี่ยได้อย่างแม่นยำ",
+      "จ่ายกำลังไฟรวมได้เต็มพิกัด 180 - 200 kW เสถียร",
+      "อุณหภูมิสายและตู้คงที่ ไม่เกิดภาวะลดทอนกำลังไฟ (Thermal Derating) ตลอดการทดสอบ 30 นาที"
+     ],
+     "4": [
+      "จ่ายไฟพร้อมกัน 2 หัวได้เต็มกำลังรวม 180 - 200 kW",
+      "มีการแบ่งโหลดตามสัดส่วนที่เหมาะสม อุณหภูมิอยู่ในเกณฑ์ปกติ"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] ชาร์จพร้อมกัน 2 หัวได้ แต่ใช้วิธีแบ่งไฟแบบคงที่ (Fixed 50/50) ไม่ใช่ Dynamic หรือพบกำลังไฟดรอปลงเล็กน้อยเมื่ออุณหภูมิสะสม"
+     ],
+     "2": [
+      "เมื่อเสียบหัวที่สอง หัวชาร์จแรกไฟกระตุกหรือหยุดชาร์จชั่วขณะ (Re-negotiation ช้าเกิน 30 วินาที)",
+      "หรือจ่ายไฟรวมได้ไม่ถึงพิกัดขั้นต่ำ 180 kW"
+     ],
+     "1": [
+      "ไม่สามารถชาร์จพร้อมกัน 2 หัวได้จริง หรือระบบตัดวงจร (Trip) เมื่อเริ่มจ่ายไฟพร้อมกัน"
+     ]
+    },
+    "evidence": "EV ทดสอบ 2 คัน, บันทึกกราฟกำลังไฟฟ้า kW ทั้ง 2 หัว, กล้องเทอร์โมสแกนวัดความร้อน"
+   },
+   {
+    "id": "2.2",
+    "title": "ความเข้ากันได้ของยานยนต์ไฟฟ้า (Interoperability)",
+    "guide": "ทดสอบ Handshake กับรถ EV ต่างสถาปัตยกรรมแรงดัน (400V และ 800V) ความเร็วตอบสนอง และการตัดกระแสเมื่อชาร์จเต็ม",
+    "max": 6,
+    "roles": "Eng , BU",
+    "levels": {
+     "5": [
+      "Handshake และเริ่มจ่ายไฟกับ EV ระบบ 400V และ 800V สำเร็จในครั้งแรกภายในไม่เกิน 15 วินาที",
+      "ปรับแรงดันไฟฟ้า (100 - 1000 VDC) และกระแส (สูงสุด 300A) ได้แม่นยำราบรื่น",
+      "ตัดกระแสไฟฟ้าเมื่อสั่งหยุดชาร์จหรือแบตเต็มได้ทันที ไร้ Error Code ค้าง"
+     ],
+     "4": [
+      "รองรับทั้งระบบ 400V และ 800V เริ่มชาร์จได้สำเร็จภายในเวลาไม่เกิน 30 วินาที การตัดต่อวงจรปลอดภัย"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] ชาร์จรถยนต์ 400V และ 800V ได้ตามสเปก แต่ Handshake ใช้เวลานาน (30 - 60 วินาที) หรือต้องเสียบหัวชาร์จซ้ำในบางรุ่น"
+     ],
+     "2": [
+      "พบปัญหา Handshake ไม่ผ่านกับรถยนต์บางรุ่น หรือมีข้อความ Communication Error บ่อยครั้ง"
+     ],
+     "1": [
+      "ไม่สามารถสื่อสารหรือจ่ายไฟให้กับรถยนต์ระบบ 800V ได้ หรือแรงดันขาออกไม่ครอบคลุม 100 - 1000 VDC"
+     ]
+    },
+    "evidence": "ทดสอบกับ EV สถาปัตยกรรม 400V (BYD/MG) และ 800V (Porsche/Hyundai/Kia), จับเวลาเริ่มชาร์จ"
+   },
+   {
+    "id": "2.3",
+    "title": "การทำงานในสภาวะ Offline / Online",
+    "guide": "สั่งชาร์จผ่าน RFID/App, ทดสอบตัดสัญญาณอินเทอร์เน็ต ตู้ต้องชาร์จต่อได้ บันทึก Local Buffering ส่งคืนครบเมื่อเน็ตมา",
+    "max": 6,
+    "roles": "Eng , BU",
+    "levels": {
+     "5": [
+      "เมื่อตัดสัญญาณเน็ต (SIM/LAN) ตู้ยังสั่งเริ่ม-หยุดชาร์จผ่าน Local RFID Card ได้ต่อเนื่อง หน้าจอแสดงสถานะ Offline ชัดเจน",
+      "บันทึก CDR (Charge Detail Record) ภายในตู้ครบถ้วน",
+      "เมื่อเน็ตกลับมา ส่งข้อมูลย้อนหลังกลับสู่ CMS ครบ 100% ใน 1 นาที ไร้ข้อมูลตกหล่น"
+     ],
+     "4": [
+      "ทำงานโหมด Offline ด้วยบัตร RFID ได้ บันทึกข้อมูลและส่งย้อนหลังกลับเข้าเซิร์ฟเวอร์ได้ครบถ้วนเมื่อเน็ตกลับมา"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] ทำงานแบบ Standalone/Offline ได้ตาม TOR แต่ต้องรอรีบูตระบบ หรือส่งข้อมูลย้อนหลังช้าเกินกว่า 5 นาที"
+     ],
+     "2": [
+      "โหมด Offline สั่งชาร์จได้ แต่ข้อมูลบางส่วนตกหล่น เช่น เวลาเริ่ม-หยุด หรือค่าพลังงาน kWh บันทึกไม่สมบูรณ์"
+     ],
+     "1": [
+      "เมื่อตัดสัญญาณเน็ต ตู้ค้างหรือล็อกระบบ ไม่สามารถชาร์จใดๆ ได้ หรือข้อมูลประวัติการชาร์จสูญหาย"
+     ]
+    },
+    "evidence": "ปลดสาย LAN และ SIM Card, ทดสอบชาร์จด้วย RFID, ตรวจสอบ Log ในตู้, เสียบสัญญาณคืนและตรวจ CMS"
+   }
+  ]
+ },
+ {
+  "id": 3,
+  "title": "ความยืดหยุ่นในการสลับ Platform และการเชื่อมต่อ",
+  "weight": 20,
+  "items": [
+   {
+    "id": "3.1",
+    "title": "ความง่ายในการตั้งค่าสลับ Platform (CMS Migration)",
+    "guide": "ประเมินความสะดวกในการสลับ Central System URL ผ่าน Local Web/Remote และความพร้อมสถาปัตยกรรมอัปเกรดเป็น OCPP 2.0.1",
+    "max": 8,
+    "roles": "MMC, IT",
+    "levels": {
+     "5": [
+      "สาธิตเปลี่ยน WebSocket URL (OCPP 1.6J) ชี้ไปยังระบบใหม่ผ่าน Local Web GUI ของตู้ได้สำเร็จใน 5 นาที",
+      "ไม่ต้องใช้โปรแกรมเฉพาะทางของผู้ผลิต ไม่ต้องรีแฟลชบอร์ด",
+      "ตู้ส่งสถานะ BootNotification และ Heartbeat กับระบบใหม่ได้ทันที สถาปัตยกรรมพร้อมอัปเกรดเป็น OCPP 2.0.1"
+     ],
+     "4": [
+      "เปลี่ยน URL และเชื่อมต่อระบบใหม่ได้สำเร็จภายใน 15 นาที โดยใช้ซอฟต์แวร์ Configuration Tool ทั่วไป"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] สามารถเปลี่ยนชี้ไปยัง Platform อื่นได้จริงตามข้อกำหนด แต่ขั้นตอนยุ่งยาก ต้องใช้คำสั่งพิเศษ หรือต้องให้ผู้เชี่ยวชาญของผู้ผลิตมาตั้งค่า"
+     ],
+     "2": [
+      "สามารถเปลี่ยน URL ได้ แต่ระบบใหม่ไม่สามารถรับคำสั่งควบคุมพื้นฐานบางคำสั่งได้ ต้องรอแก้ไข Firmware"
+     ],
+     "1": [
+      "ไม่สามารถสาธิตการย้าย Platform หน้างานได้ หรือมีระบบล็อกสิทธิ์ (Vendor Lock-in) ที่ไม่อนุญาตให้เปลี่ยนเซิร์ฟเวอร์ปลายทาง"
+     ]
+    },
+    "evidence": "สาธิตเปลี่ยน URL ไปยัง Server จำลอง, ตรวจสอบข้อความ Handshake OCPP 1.6J, จับเวลาการตั้งค่า"
+   },
+   {
+    "id": "3.2",
+    "title": "การควบคุมระยะไกลและ Dashboard ภายใน",
+    "guide": "ทดสอบคำสั่ง Remote Start/Stop, Reset, Unlock Connector, ความละเอียด Error Logs และการ Export รายงานพลังงาน",
+    "max": 6,
+    "roles": "MMC, IT",
+    "levels": {
+     "5": [
+      "สั่ง Remote Start/Stop, Remote Reset (Soft/Hard Reboot) และ Unlock Connector ผ่าน CMS สำเร็จใน 5 วินาที",
+      "ดึง Diagnostic Logs ละเอียดระดับมิลลิวินาที และ Export รายงานพลังงาน/รายได้เป็น Excel/CSV ได้ทันทีจาก Dashboard"
+     ],
+     "4": [
+      "สั่งงานระยะไกลและดึง Log ได้ครบถ้วน คำสั่งตอบสนองภายใน 15 วินาที Export รายงานได้ตามมาตรฐาน"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] รองรับ Remote Control และมี Dashboard ตาม TOR แต่ข้อมูล Log ดูได้เฉพาะ Error Code พื้นฐาน รายละเอียดยังไม่ลึกพอสำหรับการวิเคราะห์เชิงลึก"
+     ],
+     "2": [
+      "คำสั่งระยะไกลบางคำสั่งไม่ทำงาน (เช่น Unlock หัวชาร์จไม่ปลดล็อก) หรือการดึง Log ต้องต่อสายที่หน้าตู้เท่านั้น"
+     ],
+     "1": [
+      "ไม่สามารถสั่งการระยะไกลได้ หรือไม่มีระบบ Log สำหรับตรวจสอบปัญหา"
+     ]
+    },
+    "evidence": "ทดสอบส่งคำสั่งผ่านระบบควบคุมระยะไกล, ตรวจจับเวลาตอบสนอง, ตรวจสอบความละเอียดของ Error Logs"
+   },
+   {
+    "id": "3.3",
+    "title": "การเชื่อมต่อ Online Payment & Third-party Protocols",
+    "guide": "ประเมินแผนงานและการสนับสนุน Hardware/Software ในการเชื่อมต่อระบบ Payment และระบบของผู้ว่าจ้างในอนาคตฟรี",
+    "max": 6,
+    "roles": "MMC, IT",
+    "levels": {
+     "5": [
+      "มี API Architecture พร้อมเชื่อมระบบ Online Payment และแอปพลิเคชันของบริษัทฯ ได้ทันที มีคู่มือ API และโค้ดตัวอย่างชัดเจน",
+      "มีหนังสือยืนยันสนับสนุนการ Integrate และทดสอบโปรโตคอลใหม่ร่วมกับระบบของผู้ว่าจ้างในอนาคตฟรีตลอด 5 ปี"
+     ],
+     "4": [
+      "ระบบรองรับ Payment Gateway มาตรฐาน มีเอกสาร API ครบถ้วน และลงนามรับรองการเชื่อมต่อระบบในอนาคตโดยไม่มีค่าใช้จ่าย"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] ยินยอมสนับสนุนด้าน Hardware/Software ในการเชื่อมระบบ Payment และทดสอบ Protocol ฟรีตามเงื่อนไข TOR แต่ยังไม่มีเอกสาร API ที่พร้อมใช้งานทันทีหน้างาน"
+     ],
+     "2": [
+      "เอกสาร API ไม่สมบูรณ์ หรือมีเงื่อนไขจำกัดในการเชื่อมต่อระบบของ Third-party"
+     ],
+     "1": [
+      "ปฏิเสธการเปิดเผย API หรือมีเงื่อนไขคิดค่าใช้จ่ายเพิ่มเติมในการเชื่อมต่อระบบในอนาคต"
+     ]
+    },
+    "evidence": "ตรวจสอบ API Documentation, หนังสือยืนยันการเชื่อมต่อระบบในอนาคตโดยไม่มีค่าใช้จ่าย"
+   }
+  ]
+ },
+ {
+  "id": 4,
+  "title": "แผนงานติดตั้งและ Commissioning",
+  "weight": 20,
+  "items": [
+   {
+    "id": "4.1",
+    "title": "แผนการทำงานภายใน 45 วันทำการ (WBS & Timeline)",
+    "guide": "แผนงานเป็นไปได้จริง ครอบคลุมสำรวจหน้างาน, ผลิต/จัดส่ง, ติดตั้งเข้ากับท่อ IMC/HDPE และส่งมอบภายใน 45 วันทำการ",
+    "max": 7,
+    "roles": "ENG, Purchase",
+    "levels": {
+     "5": [
+      "แผนงาน WBS รายวันละเอียดชัดเจน ครอบคลุมสำรวจหน้างาน, ผลิต/ส่งมอบ, ติดตั้งเข้าฐานราก และ Commissioning",
+      "มีแผนบริหารความเสี่ยง (Contingency Plan) ที่พิสูจน์ได้ว่าส่งมอบงานได้เสร็จสิ้นจริงใน 30 - 35 วันทำการ (เร็วกว่าเกณฑ์ 45 วัน)"
+     ],
+     "4": [
+      "แผนงานครอบคลุมทุกกิจกรรมสำคัญอย่างสมบูรณ์ ระบุขั้นตอนและผู้รับผิดชอบชัดเจน มั่นใจได้ว่าส่งมอบงานได้ภายใน 45 วันทำการ"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] มีแผนงานระบุว่าจะส่งมอบภายใน 45 วันทำการตาม TOR แต่การแจกแจงกิจกรรมยังเป็นภาพกว้าง ไม่มีแผนสำรองหากเกิดความล่าช้าในการขนส่ง"
+     ],
+     "2": [
+      "แผนงานมีความกระชั้นชิดเกินไปในขั้นตอนสำคัญ (เช่น ให้เวลา Commissioning เพียง 1 วัน) เสี่ยงต่อการส่งมอบงานล่าช้า"
+     ],
+     "1": [
+      "แผนงานรวมเกินกว่า 45 วันทำการ หรือไม่มีแผนงาน WBS ที่เป็นรูปธรรม"
+     ]
+    },
+    "evidence": "ตาราง Gantt Chart / WBS รายวัน, แผนจัดการเส้นทางวิกฤต (Critical Path), แผนรับมือความล่าช้า"
+   },
+   {
+    "id": "4.2",
+    "title": "ความพร้อมด้านแบบวิศวกรรมและเอกสาร Low-Priority",
+    "guide": "ความสมบูรณ์ของแบบแปลน ฐานราก วงจรไฟฟ้า และความพร้อมในการสนับสนุนข้อมูล/ผลทดสอบเพื่อยื่นขอ Low-Priority กับการไฟฟ้า",
+    "max": 7,
+    "roles": "ENG, Purchase",
+    "levels": {
+     "5": [
+      "จัดส่งแบบวิศวกรรมครบถ้วนสมบูรณ์ (ขนาด, นน., จุดศูนย์ถ่วง, ฐานราก, Single Line Diagram, ท่อ IMC/HDPE)",
+      "จัดเตรียมชุดเอกสารทางเทคนิคและผลทดสอบที่พร้อมใช้ยื่นขออนุญาต Low-Priority กับการไฟฟ้าได้ทันที โดยผู้ว่าจ้างไม่ต้องจัดทำข้อมูลทางเทคนิคเพิ่มเติม"
+     ],
+     "4": [
+      "มีแบบวิศวกรรมและ Single Line Diagram ถูกต้องตามมาตรฐาน และมีข้อมูลผลทดสอบสำหรับยื่นขอ Low-Priority ครบถ้วนตามระเบียบการไฟฟ้า"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] มีแบบและไดอะแกรมพื้นฐานตาม TOR และพร้อมสนับสนุนเอกสารยื่น Low-Priority ตามที่ร้องขอ แต่เอกสารบางรายการยังต้องรอผู้ผลิตออกให้เป็นรายสถานี"
+     ],
+     "2": [
+      "แบบวิศวกรรมขาดรายละเอียดสำคัญ เช่น ตำแหน่งจุดเชื่อมต่อสายดินหรือระยะ Clearance รอบตู้"
+     ],
+     "1": [
+      "ไม่มีแบบวิศวกรรมที่เป็นมาตรฐาน หรือปฏิเสธการสนับสนุนเอกสารสำหรับการยื่นขอ Low-Priority"
+     ]
+    },
+    "evidence": "แบบแปลนวิศวกรรมมีลายเซ็นวิศวกร (กว.), Single Line Diagram, เอกสารสนับสนุนขอ Low-Priority"
+   },
+   {
+    "id": "4.3",
+    "title": "ความพร้อมด้านการฝึกอบรมและคู่มือ",
+    "guide": "โครงสร้างหลักสูตรอบรมทีมปฏิบัติการและช่างบำรุงรักษา พร้อมความสมบูรณ์ของคู่มือภาษาไทยฉบับเล่มและ PDF บน USB Drive",
+    "max": 6,
+    "roles": "ENG, Purchase",
+    "levels": {
+     "5": [
+      "หลักสูตรอบรมแยกเฉพาะ 2 กลุ่ม (ทีมปฏิบัติการสถานี และทีมช่างซ่อมบำรุง) พร้อมสื่อวิดีโอสาธิต",
+      "คู่มือภาษาไทยประณีต ภาพประกอบและ Troubleshooting Guide ชัดเจน",
+      "เตรียมไฟล์ PDF บรรจุใน USB Drive พร้อมส่งมอบ"
+     ],
+     "4": [
+      "มีโครงสร้างหลักสูตรอบรมครบถ้วน มีร่างคู่มือการใช้งานและการซ่อมบำรุงภาษาไทยที่อ่านเข้าใจง่าย และรูปแบบไฟล์ PDF บน USB drive ตามข้อกำหนด"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] มีหัวข้อฝึกอบรมและร่างคู่มือภาษาไทยตามเกณฑ์ TOR แต่เนื้อหาส่วนใหญ่เป็นการแปลตรงตัวจากคู่มือภาษาอังกฤษ"
+     ],
+     "2": [
+      "แผนการอบรมไม่ครอบคลุมงานซ่อมบำรุง หรือคู่มือภาษาไทยมีเฉพาะขั้นตอนการใช้งานของผู้บริโภค ขาดส่วนของช่างเทคนิค"
+     ],
+     "1": [
+      "ไม่มีคู่มือภาษาไทย หรือไม่มีแผนการฝึกอบรมที่ชัดเจน"
+     ]
+    },
+    "evidence": "ร่างหลักสูตรอบรม, ตัวอย่างเล่มคู่มือภาษาไทย, ตัวอย่างไฟล์ PDF บน USB Drive"
+   }
+  ]
+ },
+ {
+  "id": 5,
+  "title": "บริการหลังการขาย, อะไหล่ และ SLA",
+  "weight": 25,
+  "items": [
+   {
+    "id": "5.1",
+    "title": "หลักฐานคลังสำรองอะไหล่ 5 ปี (Spare Parts Stock Proof)",
+    "guide": "หลักฐานคลังจัดเก็บอะไหล่ในไทย สต็อกชิ้นส่วนวิกฤต (Power Modules, Controller Board, สาย, จอ) ระยะเวลาเบิกจ่ายหน้างาน",
+    "max": 10,
+    "roles": "Purchase,BU",
+    "levels": {
+     "5": [
+      "หลักฐานเชิงประจักษ์ชัดเจน (ภาพถ่ายคลังสินค้าในไทย, ระบบ ERP บัญชีสต็อก, สัญญาความร่วมมือผู้ผลิต)",
+      "สำรองชิ้นส่วนวิกฤต (Power Modules, Controller Board, หน้าจอ, สายชาร์จ, Contactor) ในประเทศ >= 10% ของจำนวนตู้ที่ติดตั้ง",
+      "เบิกจ่ายอะไหล่ได้ 24 ชั่วโมง"
+     ],
+     "4": [
+      "มีคลังอะไหล่ในประเทศไทย มีสต็อกชิ้นส่วนวิกฤตครบทุกรายการ และมีเอกสารรับรองการสำรองอะไหล่ต่อเนื่อง 5 ปีจากผู้ผลิต"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] มีหนังสือรับรองว่าจะสำรองอะไหล่ 5 ปีตาม TOR มีคลังเก็บสินค้าในประเทศ แต่ชิ้นส่วนราคาสูงบางรายการ (เช่น Power Module) ต้องรอเบิกจากคลังกลางซึ่งอาจใช้เวลา 2 - 3 วัน"
+     ],
+     "2": [
+      "มีคลังอะไหล่เฉพาะชิ้นส่วนสึกหรอทั่วไป (Wear & Tear) ชิ้นส่วนอิเล็กทรอนิกส์หลักต้องสั่งนำเข้าจากต่างประเทศ"
+     ],
+     "1": [
+      "ไม่มีคลังสำรองอะไหล่ในประเทศ หรือไม่สามารถแสดงเอกสารยืนยันสต็อกอะไหล่ 5 ปีได้"
+     ]
+    },
+    "evidence": "ภาพถ่ายคลังอะไหล่ในไทย, รายงานสต็อก ERP, สัญญาสำรองอะไหล่ 5 ปีกับผู้ผลิต, พิกัดสถานที่ตั้งคลัง"
+   },
+   {
+    "id": "5.2",
+    "title": "เครือข่ายทีมช่างและการตอบสนองตาม SLA (24/48 ชม.)",
+    "guide": "ทีมช่างและศูนย์บริการครอบคลุมทั่วประเทศ ระบบ Real Time Monitoring ตลอด 5 ปี ซ่อมเสร็จใน 24 ชม. (เกาะ/ใต้ 48 ชม.)",
+    "max": 8,
+    "roles": "Purchase,BU",
+    "levels": {
+     "5": [
+      "ศูนย์บริการและช่างเทคนิคครอบคลุมทุกภูมิภาคทั่วประเทศ",
+      "Real Time Monitoring พร้อมทีม NOC ติดตาม 24/7 ตรวจพบปัญหาและเริ่ม Remote Diagnose ใน 15 นาที",
+      "แผนฉุกเฉินและเส้นทางเข้าถึง 3 จว.ใต้และเกาะที่รับประกันซ่อมเสร็จใน 48 ชม. และพื้นที่ทั่วไปใน 24 ชม. จริง"
+     ],
+     "4": [
+      "มีเครือข่ายทีมช่างครอบคลุมทั่วประเทศ มีระบบ Real Time Monitoring ตลอด 5 ปี และมีสถิติการเข้าซ่อมตาม SLA 24 ชม. และ 48 ชม. ได้ตามเป้าหมาย"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] ยืนยันการปฏิบัติตาม SLA 24 ชม. (ทั่วประเทศ) และ 48 ชม. (3 จว.ใต้/เกาะ) ตามสัญญา มีระบบ Monitoring แต่ใช้ช่าง Outsource ในบางพื้นที่ห่างไกล"
+     ],
+     "2": [
+      "ทีมช่างกระจุกตัวเฉพาะในกรุงเทพฯ และหัวเมืองใหญ่ แผนการเดินทางเข้าซ่อมในพื้นที่ห่างไกลเสี่ยงเกินกำหนด SLA"
+     ],
+     "1": [
+      "ปฏิเสธเงื่อนไขเวลา SLA หรือไม่มีระบบ Real Time Monitoring ตลอด 5 ปี"
+     ]
+    },
+    "evidence": "ผังศูนย์บริการและรายชื่อทีมช่างทั่วประเทศ, สาธิตระบบ Real Time Monitoring / Ticketing SLA"
+   },
+   {
+    "id": "5.3",
+    "title": "แผนงานบำรุงรักษาเชิงป้องกัน (PM) และมาตรการชิ้นส่วนเสียซ้ำ",
+    "guide": "แผนตรวจ PM ทุก 6 เดือน ตลอด 5 ปี และ SOP ชัดเจนในการเปลี่ยนชิ้นส่วนใหม่ยกชุดเมื่อพบการชำรุดเกิน 3 ครั้ง/เดือน",
+    "max": 7,
+    "roles": "Purchase,BU",
+    "levels": {
+     "5": [
+      "คู่มือ PM Checklist ละเอียดระดับวิศวกรรม (Insulation Resistance, สอบเทียบเซนเซอร์, ขันบัสบาร์, เทอร์โมสแกน) กำหนดรอบทุก 6 เดือนล่วงหน้า 5 ปี",
+      "มี SOP เป็นลายลักษณ์อักษรระบุขั้นตอนเปลี่ยนอุปกรณ์ใหม่ยกชุดทันทีใน 48 ชม. หากชำรุดซ้ำเกิน 3 ครั้ง/เดือน พร้อมแผนแก้ไขเชิงระบบทุกตู้ฟรี"
+     ],
+     "4": [
+      "แผน PM ตรวจเช็กทุก 6 เดือนชัดเจน แจ้งล่วงหน้า 14 วัน และมีขั้นตอนการเปลี่ยนอะไหล่ใหม่กรณีเสียซ้ำเกิน 3 ครั้ง/เดือนตาม TOR ครบถ้วน"
+     ],
+     "3": [
+      "[เกณฑ์ขั้นต่ำ TOR] มีแผน PM ทุก 6 เดือนตลอด 5 ปี และลงนามยอมรับเงื่อนไขการเปลี่ยนชิ้นส่วนใหม่หากเสียซ้ำเกิน 3 ครั้ง/เดือนตาม TOR แต่ขั้นตอนการปฏิบัติยังระบุไว้เพียงกว้างๆ"
+     ],
+     "2": [
+      "แผนงาน PM ขาดการตรวจสอบทางไฟฟ้าที่สำคัญบางรายการ หรือขั้นตอนการขอเปลี่ยนชิ้นส่วนกรณีเสียซ้ำมีเงื่อนไขตรวจสอบที่ซับซ้อน"
+     ],
+     "1": [
+      "ไม่มีแผนงาน PM ทุก 6 เดือน หรือปฏิเสธเงื่อนไขการเปลี่ยนชิ้นส่วนใหม่กรณีเสียซ้ำเกิน 3 ครั้งต่อเดือน"
+     ]
+    },
+    "evidence": "Checklist บำรุงรักษาเชิงป้องกัน (PM ทุก 6 เดือน), SOP การเปลี่ยนชิ้นส่วนกรณีเสียซ้ำ > 3 ครั้ง/เดือน"
+   }
+  ]
+ }
+];
+
+const DEPARTMENTS = ['Engineering', 'BU Ev', 'MMC', 'IT', 'Purchase'];
+const CAT_ROLES = {
+  1: ['Engineering', 'BU Ev'],
+  2: ['Engineering', 'BU Ev'],
+  3: ['IT', 'MMC'],
+  4: ['Engineering', 'Purchase'],
+  5: ['Purchase', 'BU Ev']
+};
+const CAT_SHORT = { 1: 'ฮาร์ดแวร์/กายภาพ', 2: 'สมรรถนะการชาร์จ', 3: 'Platform/เชื่อมต่อ', 4: 'ติดตั้ง/Commissioning', 5: 'หลังการขาย/SLA' };
+const LEVEL_LABEL = { 1: 'ต่ำกว่าเกณฑ์', 2: 'ต้องปรับปรุง', 3: 'ตามมาตรฐาน TOR', 4: 'ดี', 5: 'ดีเยี่ยม' };
+const PASS_TOTAL = 80;      // คะแนนรวม >= 80%
+const PASS_CAT5 = 18.75;    // หมวด 5 >= 18.75 / 25
+
+const MOCK_VENDORS = [
+  { supplier: 'Delta green', brand: 'Delta', model: 'EID-E200TSEEA01 (200kW)' },
+  { supplier: 'EGAT Diamond Service Co., Ltd.', brand: 'EDS', model: 'FD180A (180kW)' },
+  { supplier: 'CTMS Technology Co.,Ltd', brand: 'Encharg', model: 'ENC20025DC-200kW' },
+  { supplier: 'Polytechnology co.,ltd', brand: 'SCU', model: 'EVMS-180P' },
+  { supplier: 'Solar world Co.,Ltd /Pun EV', brand: 'Sinexcel', model: 'SEC1000/180Y-HH-PA' },
+  { supplier: 'Entech Energy Co., Ltd.', brand: 'Star Charge', model: 'Titan V5 180kW / DC1800EN195012' }
+];
+
+const ITEMS = CATEGORIES.flatMap(c => c.items.map(i => Object.assign({}, i, { cat: c.id })));
+
+/* ───── Helpers ───── */
+const $ = id => document.getElementById(id);
+const sum = arr => arr.reduce((a, b) => a + b, 0);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const store = {
+  get(area, k) { try { return window[area].getItem(k); } catch (e) { return null; } },
+  set(area, k, v) { try { window[area].setItem(k, v); } catch (e) {} },
+  del(area, k) { try { window[area].removeItem(k); } catch (e) {} }
+};
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast align-items-center text-bg-' + (type || 'dark') + ' border-0';
+  el.setAttribute('role', 'status');
+  el.innerHTML = '<div class="d-flex"><div class="toast-body">' + esc(msg) + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="ปิด"></button></div>';
+  $('toasts').appendChild(el);
+  const t = new bootstrap.Toast(el, { delay: 4500 });
+  el.addEventListener('hidden.bs.toast', () => el.remove());
+  t.show();
+}
+const fmtTime = d => d ? d.toLocaleTimeString('th-TH') : '';
+const fmtDateTime = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }); };
+
+/* ───── State ───── */
+const state = {
+  dept: null, supplier: null, evaluator: '',
+  vendors: [], evals: [],
+  scriptUrl: '', dashSupplier: null, lastSync: null,
+  isDashUnlocked: false
+};
+const vendorOf = name => state.vendors.find(v => v.supplier === name) || { supplier: name, brand: '', model: '' };
+const roleCats = dept => Object.keys(CAT_ROLES).filter(k => CAT_ROLES[k].includes(dept)).map(Number);
+const enabledItems = () => ITEMS.filter(i => CAT_ROLES[i.cat].includes(state.dept));
+
+/* ───── API (Google Apps Script) ───── */
+async function apiGet(url) {
+  const u = url || state.scriptUrl;
+  const res = await fetch(u + (u.includes('?') ? '&' : '?') + 'action=all&_=' + Date.now());
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if (data.status !== 'success') throw new Error(data.message || 'API error');
+  return data;
+}
+async function apiPost(payload) {
+  const res = await fetch(state.scriptUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+    body: 'data=' + encodeURIComponent(JSON.stringify(payload))
+  });
+  const data = await res.json();
+  if (data.status !== 'success') throw new Error(data.message || 'บันทึกไม่สำเร็จ');
+  return data;
+}
+const demoLoad = () => { try { return JSON.parse(store.get('localStorage', 'ev_demo_evals') || '[]'); } catch (e) { return []; } };
+const demoSave = list => store.set('localStorage', 'ev_demo_evals', JSON.stringify(list));
+
+async function loadAll() {
+  if (!state.scriptUrl) {
+    state.vendors = MOCK_VENDORS.slice();
+    state.evals = demoLoad();
+  } else {
+    const data = await apiGet();
+    state.vendors = (data.vendors && data.vendors.length) ? data.vendors : MOCK_VENDORS.slice();
+    state.evals = data.evaluations || [];
+  }
+  state.lastSync = new Date();
+}
+function setConn(mode) {
+  const pill = $('connPill');
+  pill.className = 'conn ' + mode;
+  $('connText').textContent = { ok: 'เชื่อมต่อ Google Sheets แล้ว', demo: 'โหมดสาธิต', error: 'เชื่อมต่อไม่ได้' }[mode];
+  $('demoBanner').classList.toggle('d-none', mode !== 'demo');
+  $('selNoUrl').classList.toggle('d-none', !!state.scriptUrl);
+}
+async function syncAll(manual) {
+  const icon = $('syncIcon');
+  icon.classList.add('fa-spin'); $('btnSync').disabled = true;
+  try {
+    await loadAll();
+    setConn(state.scriptUrl ? 'ok' : 'demo');
+    fillVendorSelects();
+    renderDashboard();
+    updateExistingNotice();
+    if (manual) toast('อัปเดตข้อมูลล่าสุดแล้ว', 'success');
+  } catch (err) {
+    console.error(err);
+    setConn('error');
+    toast('ดึงข้อมูลจาก Google Sheets ไม่สำเร็จ: ' + err.message, 'danger');
+  } finally {
+    icon.classList.remove('fa-spin'); $('btnSync').disabled = false;
+  }
+}
+
+/* ───── Scoring ───── */
+function gradeOf(total) { return total >= 90 ? 'A' : total >= 80 ? 'B' : total >= 70 ? 'C' : total >= 60 ? 'D' : 'F'; }
+
+function summarize(supplier) {
+  const evs = state.evals.filter(e => e.supplier === supplier);
+  const items = ITEMS.map(it => {
+    const byDept = {};
+    evs.forEach(e => { const v = e.scores && e.scores[it.id]; if (v != null && v !== '') byDept[e.department] = Number(v); });
+    const vals = Object.values(byDept);
+    const avg = vals.length ? sum(vals) / vals.length : null;       // เฉลี่ยรายข้อของแผนกที่ประเมิน
+    const pts = avg == null ? 0 : avg / 5 * it.max;                 // แปลงเป็นคะแนนตามน้ำหนักข้อ
+    return Object.assign({}, it, { byDept, avg, pts });
+  });
+  const cats = CATEGORIES.map(c => {
+    const its = items.filter(i => i.cat === c.id);
+    const pts = sum(its.map(i => i.pts)), max = sum(its.map(i => i.max));
+    return { id: c.id, title: c.title, weight: c.weight, pts, max, pct: max ? pts / max * 100 : 0 };
+  });
+  const doneDepts = DEPARTMENTS.filter(d => evs.some(e => e.department === d));
+  return { evs, items, cats, total: sum(cats.map(c => c.pts)), doneDepts, complete: doneDepts.length === DEPARTMENTS.length, hasData: evs.length > 0 };
+}
+function decisionOf(s) {
+  if (!s.hasData) return { state: 'none' };
+  const c5 = s.cats.find(c => c.id === 5);
+  const okTotal = s.total >= PASS_TOTAL, okC5 = c5.pts >= PASS_CAT5;
+  return { state: !s.complete ? 'pending' : (okTotal && okC5 ? 'pass' : 'fail'), okTotal, okC5, c5: c5.pts };
+}
+
+/* ───── Selection modal ───── */
+let selModal, settingsModal, passcodeModal;
+function optionLabel(v) { return v.supplier + (v.brand ? ' — ' + v.brand : '') + (v.model ? ' (' + v.model + ')' : ''); }
+function fillVendorSelects() {
+  const sel = $('selVendor'), keep = sel.value || state.supplier || '';
+  sel.innerHTML = (state.vendors.length ? '<option value="">เลือก Supplier…</option>' : '<option value="">กำลังโหลดรายชื่อ…</option>') + state.vendors.map(v => '<option value="' + esc(v.supplier) + '">' + esc(optionLabel(v)) + '</option>').join('');
+  sel.value = state.vendors.some(v => v.supplier === keep) ? keep : '';
+
+  const ds = $('dashSupplier'), keepD = state.dashSupplier || state.supplier || '';
+  ds.innerHTML = state.vendors.map(v => '<option value="' + esc(v.supplier) + '">' + esc(optionLabel(v)) + '</option>').join('');
+  state.dashSupplier = state.vendors.some(v => v.supplier === keepD) ? keepD : (state.vendors[0] && state.vendors[0].supplier);
+  ds.value = state.dashSupplier || '';
+  checkSelValid();
+}
+function checkSelValid() { $('selStart').disabled = !($('selDept').value && $('selVendor').value); }
+function updateDeptHint() {
+  const d = $('selDept').value, hint = $('selDeptHint');
+  if (!d) { hint.classList.add('d-none'); return; }
+  hint.textContent = 'แผนก ' + d + ' ประเมินได้ในหมวดที่ ' + roleCats(d).join(', ') + ' (หมวดอื่นจะถูกล็อก)';
+  hint.classList.remove('d-none');
+}
+function openSelection() {
+  $('selDept').value = state.dept || '';
+  fillVendorSelects();
+  $('selVendor').value = state.supplier || '';
+  $('selName').value = state.evaluator || '';
+  $('selCancel').classList.toggle('d-none', !state.supplier);
+  updateDeptHint(); checkSelValid();
+  selModal.show();
+}
+function startSession() {
+  state.dept = $('selDept').value;
+  state.supplier = $('selVendor').value;
+  state.evaluator = $('selName').value.trim();
+  state.dashSupplier = state.supplier;
+  store.set('sessionStorage', 'ev_session', JSON.stringify({ dept: state.dept, supplier: state.supplier, evaluator: state.evaluator }));
+  selModal.hide();
+  renderAll();
+  bootstrap.Tab.getOrCreateInstance($('tabFormBtn')).show();
+}
+
+/* ───── Render: nav + form ───── */
+function renderNav() {
+  const has = !!(state.dept && state.supplier);
+  ['navDept', 'navVendor', 'btnChange'].forEach(id => $(id).classList.toggle('d-none', !has));
+  if (has) { $('navDeptText').textContent = state.dept; $('navVendorText').textContent = state.supplier; $('navVendor').title = state.supplier; }
+}
+const levelText = t => String(t).replace(/^\[เกณฑ์ขั้นต่ำ TOR\]\s*/, '');
+
+function itemHtml(it, enabled) {
+  const cards = [1, 2, 3, 4, 5].map(n => {
+    const bullets = ((it.levels && it.levels[n]) || []).map(b => '<li>' + esc(levelText(b)) + '</li>').join('');
+    return '<label class="lv"><input type="radio" class="visually-hidden" name="q_' + it.id + '" value="' + n + '"' + (enabled ? '' : ' disabled') + '>' +
+      '<div class="lv-body"><div class="lv-top"><span class="lv-chip c' + n + '">' + n + '</span><span class="lv-name">' + LEVEL_LABEL[n] + '</span><i class="fa-solid fa-circle-check lv-tick"></i></div>' +
+      '<ul>' + bullets + '</ul></div></label>';
+  }).join('');
+  return '<div class="q-item" data-item="' + it.id + '">' +
+    '<div class="d-flex flex-wrap justify-content-between gap-2"><div><span class="q-code">' + it.id + '</span><span class="q-title">' + esc(it.title) + '</span></div><span class="q-max">เต็ม ' + it.max + ' คะแนน</span></div>' +
+    '<p class="q-guide">' + esc(it.guide) + '</p>' +
+    (it.evidence ? '<p class="q-evidence"><i class="fa-solid fa-clipboard-check me-1"></i>หลักฐานที่ตรวจหน้างาน: ' + esc(it.evidence) + '</p>' : '') +
+    '<div class="lv-grid" role="radiogroup" aria-label="คะแนนข้อ ' + it.id + '">' + cards + '</div></div>';
+}
+function catHtml(c) {
+  const enabled = CAT_ROLES[c.id].includes(state.dept);
+  const roles = CAT_ROLES[c.id].map(d => '<span class="role-badge' + (d === state.dept ? ' me' : '') + '">' + esc(d) + '</span>').join('');
+  const items = c.items.map(i => itemHtml(i, enabled)).join('');
+  const hTag = enabled ? 'h2' : 'span';
+  const title = '<' + hTag + ' class="cat-title">หมวดที่ ' + c.id + ': ' + esc(c.title) + '</' + hTag + '><span class="cat-weight">น้ำหนัก ' + c.weight + '%</span>' + roles;
+  if (enabled) {
+    return '<section class="panel mb-3" data-cat="' + c.id + '"><div class="cat-head">' + title + '</div><div class="cat-body">' + items + '</div></section>';
+  }
+  return '<section class="panel mb-3 cat-locked" data-cat="' + c.id + '">' +
+    '<button type="button" class="cat-head" data-bs-toggle="collapse" data-bs-target="#catBody' + c.id + '" aria-expanded="false">' +
+    '<i class="fa-solid fa-lock muted"></i>' + title + '<span class="lock-note">ไม่อยู่ในบทบาทของแผนก ' + esc(state.dept) + ' – ดูเกณฑ์ได้อย่างเดียว <i class="fa-solid fa-chevron-down ms-1"></i></span></button>' +
+    '<div class="collapse" id="catBody' + c.id + '"><div class="cat-body pt-3">' + items + '</div></div></section>';
+}
+function renderForm() {
+  const v = vendorOf(state.supplier);
+  $('formSupplier').textContent = state.supplier || '–';
+  $('formModel').textContent = [v.brand, v.model].filter(Boolean).join(' · ') || '–';
+  $('formDept').textContent = state.dept || '–';
+  $('formCats').textContent = state.dept ? 'หมวด ' + roleCats(state.dept).join(', ') : '–';
+  $('rubricContainer').innerHTML = state.dept ? CATEGORIES.map(catHtml).join('') : '';
+  prefillForm();
+  updateProgress();
+}
+function myEval() { return state.evals.find(e => e.supplier === state.supplier && e.department === state.dept); }
+function prefillForm() {
+  const mine = myEval();
+  $('evalComment').value = mine ? (mine.comment || '') : '';
+  if (mine && mine.scores) {
+    Object.keys(mine.scores).forEach(id => {
+      const input = document.querySelector('input[name="q_' + id + '"][value="' + mine.scores[id] + '"]');
+      if (input && !input.disabled) input.checked = true;
+    });
+  }
+  updateExistingNotice();
+}
+function updateExistingNotice() {
+  const mine = state.dept && state.supplier ? myEval() : null, box = $('existingNotice');
+  if (mine) {
+    box.innerHTML = '<i class="fa-solid fa-pen-to-square me-2"></i>แผนก ' + esc(state.dept) + ' เคยประเมิน Supplier นี้แล้ว' + (mine.updatedAt ? ' (บันทึกล่าสุด ' + esc(fmtDateTime(mine.updatedAt)) + ')' : '') + ' – การบันทึกครั้งนี้จะเขียนทับข้อมูลเดิม';
+    box.classList.remove('d-none');
+  } else box.classList.add('d-none');
+}
+function updateProgress() {
+  const en = enabledItems();
+  let answered = 0, pts = 0, maxAnswered = 0;
+  en.forEach(i => {
+    const el = document.querySelector('input[name="q_' + i.id + '"]:checked');
+    if (el) { answered++; pts += Number(el.value) / 5 * i.max; maxAnswered += i.max; }
+  });
+  $('progressText').textContent = 'ตอบแล้ว ' + answered + '/' + en.length + ' ข้อ';
+  $('progressBar').style.width = (en.length ? answered / en.length * 100 : 0) + '%';
+  $('deptScoreText').textContent = answered ? 'คะแนนเบื้องต้นของแผนกนี้ ' + (pts / maxAnswered * 100).toFixed(1) + '%' : '';
+}
+
+/* ───── Save ───── */
+async function saveEvaluation() {
+  const en = enabledItems(), scores = {};
+  let firstMissing = null;
+  document.querySelectorAll('.q-item.is-missing').forEach(el => el.classList.remove('is-missing'));
+  en.forEach(i => {
+    const el = document.querySelector('input[name="q_' + i.id + '"]:checked');
+    if (el) scores[i.id] = Number(el.value);
+    else {
+      const box = document.querySelector('.q-item[data-item="' + i.id + '"]');
+      box.classList.add('is-missing');
+      if (!firstMissing) firstMissing = box;
+    }
+  });
+  if (firstMissing) {
+    firstMissing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    toast('ยังตอบไม่ครบ – เหลืออีก ' + (en.length - Object.keys(scores).length) + ' ข้อ', 'warning');
+    return;
+  }
+
+  const v = vendorOf(state.supplier);
+  const payload = { supplier: state.supplier, brand: v.brand, model: v.model, department: state.dept, evaluator: state.evaluator, comment: $('evalComment').value.trim(), scores };
+  const btn = $('btnSave'), original = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังบันทึก…';
+
+  try {
+    let action, updatedAt = new Date().toISOString();
+    if (state.scriptUrl) {
+      const r = await apiPost(payload);
+      action = r.action; updatedAt = r.updatedAt || updatedAt;
+    } else {
+      const list = demoLoad();
+      const idx = list.findIndex(e => e.supplier === payload.supplier && e.department === payload.department);
+      const rec = Object.assign({}, payload, { updatedAt });
+      if (idx !== -1) { list[idx] = rec; action = 'updated'; } else { list.push(rec); action = 'inserted'; }
+      demoSave(list);
+    }
+    // อัปเดตข้อมูลในหน้าทันที
+    const rec = Object.assign({}, payload, { updatedAt });
+    const i2 = state.evals.findIndex(e => e.supplier === rec.supplier && e.department === rec.department);
+    if (i2 !== -1) state.evals[i2] = rec; else state.evals.push(rec);
+    state.lastSync = new Date();
+    state.dashSupplier = state.supplier;
+    $('dashSupplier').value = state.supplier;
+    renderDashboard(); updateExistingNotice();
+    toast(action === 'updated' ? 'อัปเดตผลการประเมินเดิมเรียบร้อย' : 'บันทึกผลการประเมินเรียบร้อย', 'success');
+    if (state.scriptUrl) syncAll(false);   // ดึงข้อมูลรวมจากทุกแผนกมาอัปเดตอีกครั้ง
+  } catch (err) {
+    console.error(err);
+    toast('บันทึกไม่สำเร็จ: ' + err.message, 'danger');
+  } finally {
+    btn.disabled = false; btn.innerHTML = original;
+  }
+}
+
+/* ───── Render: dashboard ───── */
+let radar = null;
+function deptChip(d, done) { return '<span class="dchip' + (done ? ' done' : '') + '"><i class="fa-solid ' + (done ? 'fa-circle-check' : 'fa-clock') + '"></i>' + esc(d) + '</span>'; }
+
+function renderDashboard() {
+  const name = state.dashSupplier;
+  $('lastSync').textContent = state.lastSync ? 'อัปเดตข้อมูลล่าสุด ' + fmtTime(state.lastSync) : '';
+  if (!name) return;
+  const s = summarize(name), dec = decisionOf(s);
+  $('dashEmpty').classList.toggle('d-none', s.hasData);
+
+  // KPI: คะแนนรวม / เกรด
+  const g = gradeOf(s.total);
+  $('kpiTotal').textContent = s.hasData ? s.total.toFixed(1) + '%' : '–';
+  $('kpiBar').style.width = (s.hasData ? s.total : 0) + '%';
+  $('kpiTotalSub').textContent = s.hasData ? s.total.toFixed(2) + ' / 100 คะแนน' + (s.complete ? '' : ' (เบื้องต้น – ยังประเมินไม่ครบ)') : 'ยังไม่มีข้อมูล';
+  const gEl = $('kpiGrade');
+  gEl.textContent = s.hasData ? g : '–';
+  gEl.className = 'kpi-value' + (s.hasData ? ' grade-' + g : '');
+
+  // KPI: สถานะแผนก
+  $('kpiDepts').textContent = s.doneDepts.length + '/5';
+  $('kpiDeptChips').innerHTML = DEPARTMENTS.map(d => deptChip(d, s.doneDepts.includes(d))).join('');
+
+  // KPI: ผลตามเกณฑ์
+  const dEl = $('kpiDecision'), lines = $('kpiDecisionLines');
+  if (dec.state === 'none') { dEl.textContent = 'รอข้อมูล'; dEl.style.color = 'var(--muted)'; lines.innerHTML = ''; }
+  else {
+    dEl.textContent = { pending: 'รอประเมินให้ครบ 5 แผนก', pass: 'ผ่านเกณฑ์คะแนน', fail: 'ไม่ผ่านเกณฑ์คะแนน' }[dec.state];
+    dEl.style.color = { pending: 'var(--amber)', pass: 'var(--green-dark)', fail: 'var(--rose)' }[dec.state];
+    const icon = ok => dec.state === 'pending' ? 'fa-clock' : (ok ? 'fa-circle-check' : 'fa-circle-xmark');
+    lines.innerHTML =
+      '<div class="decision-line"><i class="fa-solid ' + icon(dec.okTotal) + '"></i><span>คะแนนรวม ≥ ' + PASS_TOTAL + '% (ได้ ' + s.total.toFixed(1) + '%)</span></div>' +
+      '<div class="decision-line"><i class="fa-solid ' + icon(dec.okC5) + '"></i><span>หมวด 5 ≥ ' + PASS_CAT5 + ' / 25 (ได้ ' + dec.c5.toFixed(2) + ')</span></div>';
+  }
+
+  // Radar
+  const labels = CATEGORIES.map(c => ['หมวด ' + c.id, CAT_SHORT[c.id], '(' + c.weight + '%)']);
+  const data = s.cats.map(c => +c.pct.toFixed(1));
+  if (!radar) {
+    Chart.defaults.font.family = "'Sarabun', sans-serif";
+    radar = new Chart($('radarChart'), {
+      type: 'radar',
+      data: { labels, datasets: [
+        { label: 'คะแนนที่ได้', data, backgroundColor: 'rgba(16,185,129,.22)', borderColor: '#10b981', borderWidth: 2, pointBackgroundColor: '#10b981', pointRadius: 4 },
+        { label: 'คะแนนเต็ม', data: [100, 100, 100, 100, 100], backgroundColor: 'transparent', borderColor: '#0f2b48', borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0 }
+      ] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, callback: v => v + '%', backdropColor: 'transparent' }, pointLabels: { font: { size: 12 } } } },
+        plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: ctx => {
+          const c = radar._cats[ctx.dataIndex];
+          return ctx.datasetIndex === 0 ? ' ' + c.pts.toFixed(2) + ' / ' + c.max + ' คะแนน (' + c.pct.toFixed(1) + '%)' : ' เต็ม ' + c.max + ' คะแนน';
+        } } } }
+      }
+    });
+  }
+  radar._cats = s.cats;
+  radar.data.datasets[0].data = data;
+  radar.update();
+
+  // ตารางรายหมวด
+  $('catTableBody').innerHTML = s.cats.map(c => {
+    const chips = CAT_ROLES[c.id].map(d => deptChip(d, s.evs.some(e => e.department === d))).join(' ');
+    return '<tr><td><strong>' + c.id + '</strong> ' + esc(CAT_SHORT[c.id]) + '<div class="muted small">น้ำหนัก ' + c.weight + '%</div></td>' +
+      '<td><div class="d-flex flex-wrap gap-1">' + chips + '</div></td>' +
+      '<td class="text-end text-nowrap fw-semibold">' + c.pts.toFixed(2) + ' / ' + c.max + '</td>' +
+      '<td><div class="mini-bar"><span style="width:' + c.pct.toFixed(1) + '%"></span></div><div class="small muted text-end">' + c.pct.toFixed(1) + '%</div></td></tr>';
+  }).join('');
+
+  // ตารางรายข้อ
+  $('itemTableBody').innerHTML = s.items.map(i => {
+    const cells = DEPARTMENTS.map(d => {
+      if (!CAT_ROLES[i.cat].includes(d)) return '<td class="na"></td>';
+      return i.byDept[d] != null ? '<td class="text-center fw-semibold">' + i.byDept[d] + '</td>' : '<td class="text-center muted small">รอ</td>';
+    }).join('');
+    return '<tr><td class="fw-semibold">' + i.id + '</td><td>' + esc(i.title) + '</td>' + cells +
+      '<td class="text-center">' + (i.avg != null ? i.avg.toFixed(2) : '–') + '</td>' +
+      '<td class="text-end text-nowrap">' + i.pts.toFixed(2) + ' / ' + i.max + '</td></tr>';
+  }).join('');
+
+  // เปรียบเทียบทุก Supplier
+  const rows = state.vendors.map(v => ({ v, s: summarize(v.supplier) })).sort((a, b) => b.s.total - a.s.total);
+  $('compareBody').innerHTML = rows.map(({ v, s: x }) => {
+    const gg = gradeOf(x.total), c5 = x.cats.find(c => c.id === 5);
+    return '<tr class="row-click' + (v.supplier === name ? ' row-current' : '') + '" data-supplier="' + esc(v.supplier) + '">' +
+      '<td class="fw-semibold">' + esc(v.supplier) + '</td><td class="muted">' + esc([v.brand, v.model].filter(Boolean).join(' · ')) + '</td>' +
+      '<td class="text-end">' + (x.hasData ? x.total.toFixed(1) + '%' : '–') + '</td>' +
+      '<td class="text-center fw-bold ' + (x.hasData ? 'grade-' + gg : '') + '">' + (x.hasData ? gg : '–') + '</td>' +
+      '<td class="text-end">' + (x.hasData ? c5.pts.toFixed(2) + ' / 25' : '–') + '</td>' +
+      '<td class="text-center">' + x.doneDepts.length + '/5</td></tr>';
+  }).join('');
+}
+
+function renderAll() { renderNav(); renderForm(); renderDashboard(); }
+
+/* ───── Settings ───── */
+const URL_OK = /^https:\/\/script\.google\.com\/.+\/exec$/;
+function openSettings() {
+  $('urlInput').value = state.scriptUrl;
+  $('urlInput').classList.remove('is-invalid');
+  $('testResult').classList.add('d-none');
+  $('btnClearDemo').classList.toggle('d-none', !(demoLoad().length));
+  settingsModal.show();
+}
+async function testUrl() {
+  const url = $('urlInput').value.trim(), out = $('testResult');
+  out.classList.remove('d-none');
+  if (!URL_OK.test(url)) { $('urlInput').classList.add('is-invalid'); out.classList.add('d-none'); return; }
+  $('urlInput').classList.remove('is-invalid');
+  out.className = 'fs-7 mt-3 muted'; out.textContent = 'กำลังทดสอบ…';
+  try {
+    const d = await apiGet(url);
+    out.className = 'fs-7 mt-3 text-success';
+    out.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>เชื่อมต่อสำเร็จ – พบ Supplier ' + (d.vendors || []).length + ' ราย, ผลประเมิน ' + (d.evaluations || []).length + ' รายการ';
+  } catch (err) {
+    out.className = 'fs-7 mt-3 text-danger';
+    out.innerHTML = '<i class="fa-solid fa-circle-xmark me-1"></i>เชื่อมต่อไม่สำเร็จ: ' + esc(err.message) + ' (ตรวจว่า Deploy เป็น “Anyone” และใช้ URL ที่ลงท้ายด้วย /exec)';
+  }
+}
+async function saveUrl() {
+  const url = $('urlInput').value.trim();
+  if (url && !URL_OK.test(url)) { $('urlInput').classList.add('is-invalid'); return; }
+  state.scriptUrl = url;
+  if (url) store.set('localStorage', 'EV_SCRIPT_URL', url); else store.del('localStorage', 'EV_SCRIPT_URL');
+  settingsModal.hide();
+  await syncAll(true);
+}
+
+/* ───── Init ───── */
+function bindEvents() {
+  $('selDept').addEventListener('change', () => { updateDeptHint(); checkSelValid(); });
+  $('selVendor').addEventListener('change', checkSelValid);
+  $('selStart').addEventListener('click', startSession);
+  $('selCancel').addEventListener('click', () => selModal.hide());
+  $('btnChange').addEventListener('click', openSelection);
+  $('btnSettings').addEventListener('click', openSettings);
+  $('demoSettingsLink').addEventListener('click', e => { e.preventDefault(); openSettings(); });
+  $('selOpenSettings').addEventListener('click', e => {
+    e.preventDefault();
+    $('selectModal').addEventListener('hidden.bs.modal', function once() {
+      $('selectModal').removeEventListener('hidden.bs.modal', once);
+      openSettings();
+    });
+    selModal.hide();
+  });
+  $('settingsModal').addEventListener('hidden.bs.modal', () => { if (!state.supplier) openSelection(); });
+  $('btnTestUrl').addEventListener('click', testUrl);
+  $('btnSaveUrl').addEventListener('click', saveUrl);
+  $('btnClearDemo').addEventListener('click', () => {
+    if (!confirm('ลบข้อมูลสาธิตที่เก็บในเบราว์เซอร์นี้ทั้งหมด?')) return;
+    store.del('localStorage', 'ev_demo_evals');
+    if (!state.scriptUrl) state.evals = [];
+    $('btnClearDemo').classList.add('d-none');
+    renderDashboard(); prefillForm(); toast('ล้างข้อมูลสาธิตแล้ว');
+  });
+  $('rubricContainer').addEventListener('change', e => {
+    if (e.target.matches('input[type="radio"]')) {
+      const box = e.target.closest('.q-item'); if (box) box.classList.remove('is-missing');
+      updateProgress();
+    }
+  });
+  $('btnSave').addEventListener('click', saveEvaluation);
+  $('btnSync').addEventListener('click', () => syncAll(true));
+  $('tabDashBtn').addEventListener('show.bs.tab', e => {
+    if (!state.isDashUnlocked) {
+      e.preventDefault();
+      $('dashPasscodeInput').value = '';
+      $('dashPasscodeInput').classList.remove('is-invalid');
+      passcodeModal.show();
+      setTimeout(() => $('dashPasscodeInput').focus(), 300);
+    }
+  });
+  $('tabDashBtn').addEventListener('shown.bs.tab', () => { if (radar) radar.resize(); });
+  $('btnConfirmPasscode').addEventListener('click', checkPasscode);
+  $('dashPasscodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPasscode(); });
+  $('btnCancelPasscode').addEventListener('click', () => passcodeModal.hide());
+  $('dashSupplier').addEventListener('change', e => { state.dashSupplier = e.target.value; renderDashboard(); });
+  $('compareBody').addEventListener('click', e => {
+    const tr = e.target.closest('tr[data-supplier]'); if (!tr) return;
+    state.dashSupplier = tr.dataset.supplier; $('dashSupplier').value = state.dashSupplier; renderDashboard();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+function checkPasscode() {
+  const input = $('dashPasscodeInput');
+  if (input.value === 'Engineer') {
+    state.isDashUnlocked = true;
+    input.classList.remove('is-invalid');
+    passcodeModal.hide();
+    bootstrap.Tab.getOrCreateInstance($('tabDashBtn')).show();
+  } else {
+    input.classList.add('is-invalid');
+  }
+}
+
+async function init() {
+  selModal = new bootstrap.Modal($('selectModal'));
+  settingsModal = new bootstrap.Modal($('settingsModal'));
+  passcodeModal = new bootstrap.Modal($('passcodeModal'));
+  state.scriptUrl = (store.get('localStorage', 'EV_SCRIPT_URL') || DEFAULT_SCRIPT_URL || '').trim();
+  bindEvents();
+  setConn(state.scriptUrl ? 'ok' : 'demo');
+
+  let sess = null;
+  try { sess = JSON.parse(store.get('sessionStorage', 'ev_session') || 'null'); } catch (e) {}
+
+  if (!sess) { fillVendorSelects(); selModal.show(); }   // เข้าเว็บครั้งแรก: บังคับเลือกแผนก + Supplier
+
+  try {
+    await loadAll();
+    setConn(state.scriptUrl ? 'ok' : 'demo');
+  } catch (err) {
+    console.error(err);
+    state.vendors = MOCK_VENDORS.slice();
+    setConn('error');
+    toast('เชื่อมต่อ Google Sheets ไม่สำเร็จ: ' + err.message, 'danger');
+  }
+
+  if (sess && state.vendors.some(v => v.supplier === sess.supplier)) {
+    state.dept = sess.dept; state.supplier = sess.supplier; state.evaluator = sess.evaluator || ''; state.dashSupplier = sess.supplier;
+    fillVendorSelects(); renderAll();
+  } else {
+    fillVendorSelects(); renderAll();
+    if (sess) selModal.show();
+  }
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
