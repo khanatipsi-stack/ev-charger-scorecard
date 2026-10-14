@@ -268,6 +268,11 @@
             <tbody id="itemTableBody"></tbody>
           </table>
         </div>
+
+        <!-- ── เพิ่มส่วนแสดงข้อสังเกตเพิ่มเติมท้ายตารางคะแนนรายข้อ ── -->
+        <hr class="my-3">
+        <h2 class="fs-6 fw-bold mb-2"><i class="fa-regular fa-comment-dots me-2 text-navy"></i>ข้อสังเกตเพิ่มเติมจากผู้ประเมินแต่ละฝ่าย</h2>
+        <div id="commentsContainer" class="row g-2"></div>
       </div>
 
       <div class="panel p-3">
@@ -1225,6 +1230,25 @@ function renderDashboard() {
       '<td class="text-end text-nowrap">' + i.pts.toFixed(2) + ' / ' + i.max + '</td></tr>';
   }).join('');
 
+  // ── แสดงข้อสังเกตเพิ่มเติมแยกตามแผนกท้ายตารางคะแนนรายข้อ ──
+  const commentsBox = $('commentsContainer');
+  const evsWithComment = s.evs.filter(e => e.comment && e.comment.trim() !== '');
+  if (!evsWithComment.length) {
+    commentsBox.innerHTML = '<div class="col-12"><div class="p-3 bg-light rounded text-muted fs-7"><i class="fa-solid fa-info-circle me-1"></i>ยังไม่มีแผนกใดระบุข้อสังเกตเพิ่มเติมสำหรับ Supplier นี้</div></div>';
+  } else {
+    commentsBox.innerHTML = evsWithComment.map(e => `
+      <div class="col-md-6">
+        <div class="p-2 border rounded bg-light h-100 fs-7">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="badge bg-navy text-white fw-bold"><i class="fa-solid fa-building me-1"></i>${esc(e.department)}</span>
+            <span class="text-muted fs-7" style="font-size:0.75rem;">${e.evaluator ? esc(e.evaluator) : 'ผู้ประเมิน'} · ${e.updatedAt ? esc(fmtDateTime(e.updatedAt)) : ''}</span>
+          </div>
+          <div class="text-dark mt-1" style="white-space: pre-line;">${esc(e.comment)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
   // เปรียบเทียบทุก Supplier
   const rows = state.vendors.map(v => ({ v, s: summarize(v.supplier) })).sort((a, b) => b.s.total - a.s.total);
   $('compareBody').innerHTML = rows.map(({ v, s: x }) => {
@@ -1245,15 +1269,13 @@ const URL_OK = /^https:\/\/script\.google\.com\/.+\/exec$/;
 function openSettings() {
   $('urlInput').value = state.scriptUrl;
   $('urlInput').classList.remove('is-invalid');
-  $('testResult').classList.add('d-none');
-  $('btnClearDemo').classList.toggle('d-none', !(demoLoad().length));
+  $('testResult').classList.add('d-none');$('btnClearDemo').classList.toggle('d-none', !(demoLoad().length));
   settingsModal.show();
 }
 async function testUrl() {
-  const url = $('urlInput').value.trim(), out = $('testResult');
+  const url = $('urlInput').value.trim(), out =$('testResult');
   out.classList.remove('d-none');
-  if (!URL_OK.test(url)) { $('urlInput').classList.add('is-invalid'); out.classList.add('d-none'); return; }
-  $('urlInput').classList.remove('is-invalid');
+  if (!URL_OK.test(url)) { $('urlInput').classList.add('is-invalid'); out.classList.add('d-none'); return; }$('urlInput').classList.remove('is-invalid');
   out.className = 'fs-7 mt-3 muted'; out.textContent = 'กำลังทดสอบ…';
   try {
     const d = await apiGet(url);
@@ -1275,25 +1297,18 @@ async function saveUrl() {
 
 /* ───── Init ───── */
 function bindEvents() {
-  $('selDept').addEventListener('change', () => { updateDeptHint(); checkSelValid(); });
-  $('selVendor').addEventListener('change', checkSelValid);
-  $('selStart').addEventListener('click', startSession);
-  $('selCancel').addEventListener('click', () => selModal.hide());
-  $('btnChange').addEventListener('click', openSelection);
-  $('btnSettings').addEventListener('click', openSettings);
-  $('demoSettingsLink').addEventListener('click', e => { e.preventDefault(); openSettings(); });
-  $('selOpenSettings').addEventListener('click', e => {
+  $('selDept').addEventListener('change', () => { updateDeptHint(); checkSelValid(); });$('selVendor').addEventListener('change', checkSelValid);
+  $('selStart').addEventListener('click', startSession);$('selCancel').addEventListener('click', () => selModal.hide());
+  $('btnChange').addEventListener('click', openSelection);$('btnSettings').addEventListener('click', openSettings);
+  $('demoSettingsLink').addEventListener('click', e => { e.preventDefault(); openSettings(); });$('selOpenSettings').addEventListener('click', e => {
     e.preventDefault();
-    $('selectModal').addEventListener('hidden.bs.modal', function once() {
-      $('selectModal').removeEventListener('hidden.bs.modal', once);
+    $('selectModal').addEventListener('hidden.bs.modal', function once() {$('selectModal').removeEventListener('hidden.bs.modal', once);
       openSettings();
     });
     selModal.hide();
   });
-  $('settingsModal').addEventListener('hidden.bs.modal', () => { if (!state.supplier) openSelection(); });
-  $('btnTestUrl').addEventListener('click', testUrl);
-  $('btnSaveUrl').addEventListener('click', saveUrl);
-  $('btnClearDemo').addEventListener('click', () => {
+  $('settingsModal').addEventListener('hidden.bs.modal', () => { if (!state.supplier) openSelection(); });$('btnTestUrl').addEventListener('click', testUrl);
+  $('btnSaveUrl').addEventListener('click', saveUrl);$('btnClearDemo').addEventListener('click', () => {
     if (!confirm('ลบข้อมูลสาธิตที่เก็บในเบราว์เซอร์นี้ทั้งหมด?')) return;
     store.del('localStorage', 'ev_demo_evals');
     if (!state.scriptUrl) state.evals = [];
@@ -1307,22 +1322,17 @@ function bindEvents() {
     }
   });
   $('btnSave').addEventListener('click', saveEvaluation);
-  $('btnSync').addEventListener('click', () => syncAll(true));
-  $('tabDashBtn').addEventListener('show.bs.tab', e => {
+  $('btnSync').addEventListener('click', () => syncAll(true));$('tabDashBtn').addEventListener('show.bs.tab', e => {
     if (!state.isDashUnlocked) {
       e.preventDefault();
-      $('dashPasscodeInput').value = '';
-      $('dashPasscodeInput').classList.remove('is-invalid');
+      $('dashPasscodeInput').value = '';$('dashPasscodeInput').classList.remove('is-invalid');
       passcodeModal.show();
       setTimeout(() => $('dashPasscodeInput').focus(), 300);
     }
   });
-  $('tabDashBtn').addEventListener('shown.bs.tab', () => { if (radar) radar.resize(); });
-  $('btnConfirmPasscode').addEventListener('click', checkPasscode);
-  $('dashPasscodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPasscode(); });
-  $('btnCancelPasscode').addEventListener('click', () => passcodeModal.hide());
-  $('dashSupplier').addEventListener('change', e => { state.dashSupplier = e.target.value; renderDashboard(); });
-  $('compareBody').addEventListener('click', e => {
+  $('tabDashBtn').addEventListener('shown.bs.tab', () => { if (radar) radar.resize(); });$('btnConfirmPasscode').addEventListener('click', checkPasscode);
+  $('dashPasscodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPasscode(); });$('btnCancelPasscode').addEventListener('click', () => passcodeModal.hide());
+  $('dashSupplier').addEventListener('change', e => { state.dashSupplier = e.target.value; renderDashboard(); });$('compareBody').addEventListener('click', e => {
     const tr = e.target.closest('tr[data-supplier]'); if (!tr) return;
     state.dashSupplier = tr.dataset.supplier; $('dashSupplier').value = state.dashSupplier; renderDashboard();
     window.scrollTo({ top: 0, behavior: 'smooth' });
