@@ -269,7 +269,7 @@
           </table>
         </div>
 
-        <!-- ── เพิ่มส่วนแสดงข้อสังเกตเพิ่มเติมท้ายตารางคะแนนรายข้อ ── -->
+        <!-- ── ส่วนแสดงข้อสังเกตเพิ่มเติมแยกตามแผนก ── -->
         <hr class="my-3">
         <h2 class="fs-6 fw-bold mb-2"><i class="fa-regular fa-comment-dots me-2 text-navy"></i>ข้อสังเกตเพิ่มเติมจากผู้ประเมินแต่ละฝ่าย</h2>
         <div id="commentsContainer" class="row g-2"></div>
@@ -392,7 +392,7 @@ const CATEGORIES = [
     "title": "โครงสร้างตู้และความทนทานภายนอก",
     "guide": "ตรวจสอบมาตรฐาน IP55, IK08 ความหนาเหล็ก รอยเชื่อม การเคลือบสีกันสนิม และการซีลขอบยางป้องกันน้ำและความชื้นรอบตู้",
     "max": 5,
-    "roles": "Eng , BU",
+    "roles": "BU Ev, Engineering, Purchase",
     "levels": {
      "5": [
       "โครงสร้างเหล็ก/สแตนเลสมาตรฐานอุตสาหกรรมสูง รอยเชื่อมเรียบเนียน เคลือบสีกันสนิมทนไอสารเคมี",
@@ -424,7 +424,7 @@ const CATEGORIES = [
     "title": "ระบบรอกดึงสาย (Retractor) และสายชาร์จ",
     "guide": "สายชาร์จยาวไม่น้อยกว่า 5 เมตร, ทดสอบความนุ่มนวลและแรงดึงกลับของ Retractor สายต้องไม่ลากพื้น หัวชาร์จ CCS2 จับถนัดมือ",
     "max": 5,
-    "roles": "Eng , BU",
+    "roles": "BU Ev, Engineering, Purchase",
     "levels": {
      "5": [
       "สายชาร์จยาว >= 5 เมตร",
@@ -454,7 +454,7 @@ const CATEGORIES = [
     "title": "หน้าจอ Touchscreen และการจัดวางอุปกรณ์ภายใน",
     "guide": "หน้าจอรองรับไทย-อังกฤษ ชัดเจนสู้แดดกลางแจ้ง, ตรวจสอบ Modular Design ถอดเปลี่ยนชิ้นส่วนง่าย และระบบ Forced-Air Cooling",
     "max": 5,
-    "roles": "Eng , BU",
+    "roles": "BU Ev, Engineering, Purchase",
     "levels": {
      "5": [
       "หน้าจอสว่างคมชัดสูงสู้แดดจัดกลางแจ้ง (>= 1,000 nits) ตอบสนองสัมผัสได้ทันที รองรับ 2 ภาษา",
@@ -492,7 +492,7 @@ const CATEGORIES = [
     "title": "การชาร์จพร้อมกัน 2 หัวจ่าย (Simultaneous Charging)",
     "guide": "ชาร์จยานยนต์ไฟฟ้า 2 คันพร้อมกัน ตรวจสอบ Dynamic Load Balancing กำลังรวม 180-200 kW เสถียรภาพกระแส/แรงดัน และความร้อน",
     "max": 8,
-    "roles": "Eng , BU",
+    "roles": "BU Ev, Engineering, MMC",
     "levels": {
      "5": [
       "เสียบชาร์จ EV 2 คันพร้อมกัน ระบบ Dynamic Power Sharing จัดสรรพลังงานเฉลี่ยได้อย่างแม่นยำ",
@@ -521,7 +521,7 @@ const CATEGORIES = [
     "title": "ความเข้ากันได้ของยานยนต์ไฟฟ้า (Interoperability)",
     "guide": "ทดสอบ Handshake กับรถ EV ต่างสถาปัตยกรรมแรงดัน (400V และ 800V) ความเร็วตอบสนอง และการตัดกระแสเมื่อชาร์จเต็ม",
     "max": 6,
-    "roles": "Eng , BU",
+    "roles": "BU Ev, Engineering, MMC",
     "levels": {
      "5": [
       "Handshake และเริ่มจ่ายไฟกับ EV ระบบ 400V และ 800V สำเร็จในครั้งแรกภายในไม่เกิน 15 วินาที",
@@ -548,7 +548,7 @@ const CATEGORIES = [
     "title": "การทำงานในสภาวะ Offline / Online",
     "guide": "สั่งชาร์จผ่าน RFID/App, ทดสอบตัดสัญญาณอินเทอร์เน็ต ตู้ต้องชาร์จต่อได้ บันทึก Local Buffering ส่งคืนครบเมื่อเน็ตมา",
     "max": 6,
-    "roles": "Eng , BU",
+    "roles": "BU Ev, Engineering, MMC",
     "levels": {
      "5": [
       "เมื่อตัดสัญญาณเน็ต (SIM/LAN) ตู้ยังสั่งเริ่ม-หยุดชาร์จผ่าน Local RFID Card ได้ต่อเนื่อง หน้าจอแสดงสถานะ Offline ชัดเจน",
@@ -582,7 +582,7 @@ const CATEGORIES = [
     "title": "ความง่ายในการตั้งค่าสลับ Platform (CMS Migration)",
     "guide": "ประเมินความสะดวกในการสลับ Central System URL ผ่าน Local Web/Remote และความพร้อมสถาปัตยกรรมอัปเกรดเป็น OCPP 2.0.1",
     "max": 8,
-    "roles": "MMC, IT",
+    "roles": "MMC, IT, BU Ev",
     "levels": {
      "5": [
       "สาธิตเปลี่ยน WebSocket URL (OCPP 1.6J) ชี้ไปยังระบบใหม่ผ่าน Local Web GUI ของตู้ได้สำเร็จใน 5 นาที",
@@ -609,7 +609,7 @@ const CATEGORIES = [
     "title": "การควบคุมระยะไกลและ Dashboard ภายใน",
     "guide": "ทดสอบคำสั่ง Remote Start/Stop, Reset, Unlock Connector, ความละเอียด Error Logs และการ Export รายงานพลังงาน",
     "max": 6,
-    "roles": "MMC, IT",
+    "roles": "MMC, IT, BU Ev",
     "levels": {
      "5": [
       "สั่ง Remote Start/Stop, Remote Reset (Soft/Hard Reboot) และ Unlock Connector ผ่าน CMS สำเร็จใน 5 วินาที",
@@ -635,7 +635,7 @@ const CATEGORIES = [
     "title": "การเชื่อมต่อ Online Payment & Third-party Protocols",
     "guide": "ประเมินแผนงานและการสนับสนุน Hardware/Software ในการเชื่อมต่อระบบ Payment และระบบของผู้ว่าจ้างในอนาคตฟรี",
     "max": 6,
-    "roles": "MMC, IT",
+    "roles": "MMC, IT, BU Ev",
     "levels": {
      "5": [
       "มี API Architecture พร้อมเชื่อมระบบ Online Payment และแอปพลิเคชันของบริษัทฯ ได้ทันที มีคู่มือ API และโค้ดตัวอย่างชัดเจน",
@@ -668,7 +668,7 @@ const CATEGORIES = [
     "title": "แผนการทำงานภายใน 45 วันทำการ (WBS & Timeline)",
     "guide": "แผนงานเป็นไปได้จริง ครอบคลุมสำรวจหน้างาน, ผลิต/จัดส่ง, ติดตั้งเข้ากับท่อ IMC/HDPE และส่งมอบภายใน 45 วันทำการ",
     "max": 7,
-    "roles": "ENG, Purchase",
+    "roles": "Engineering, Purchase, BU Ev",
     "levels": {
      "5": [
       "แผนงาน WBS รายวันละเอียดชัดเจน ครอบคลุมสำรวจหน้างาน, ผลิต/ส่งมอบ, ติดตั้งเข้าฐานราก และ Commissioning",
@@ -694,7 +694,7 @@ const CATEGORIES = [
     "title": "ความพร้อมด้านแบบวิศวกรรมและเอกสาร Low-Priority",
     "guide": "ความสมบูรณ์ของแบบแปลน ฐานราก วงจรไฟฟ้า และความพร้อมในการสนับสนุนข้อมูล/ผลทดสอบเพื่อยื่นขอ Low-Priority กับการไฟฟ้า",
     "max": 7,
-    "roles": "ENG, Purchase",
+    "roles": "Engineering, Purchase, BU Ev",
     "levels": {
      "5": [
       "จัดส่งแบบวิศวกรรมครบถ้วนสมบูรณ์ (ขนาด, นน., จุดศูนย์ถ่วง, ฐานราก, Single Line Diagram, ท่อ IMC/HDPE)",
@@ -720,7 +720,7 @@ const CATEGORIES = [
     "title": "ความพร้อมด้านการฝึกอบรมและคู่มือ",
     "guide": "โครงสร้างหลักสูตรอบรมทีมปฏิบัติการและช่างบำรุงรักษา พร้อมความสมบูรณ์ของคู่มือภาษาไทยฉบับเล่มและ PDF บน USB Drive",
     "max": 6,
-    "roles": "ENG, Purchase",
+    "roles": "Engineering, Purchase, BU Ev",
     "levels": {
      "5": [
       "หลักสูตรอบรมแยกเฉพาะ 2 กลุ่ม (ทีมปฏิบัติการสถานี และทีมช่างซ่อมบำรุง) พร้อมสื่อวิดีโอสาธิต",
@@ -754,7 +754,7 @@ const CATEGORIES = [
     "title": "หลักฐานคลังสำรองอะไหล่ 5 ปี (Spare Parts Stock Proof)",
     "guide": "หลักฐานคลังจัดเก็บอะไหล่ในไทย สต็อกชิ้นส่วนวิกฤต (Power Modules, Controller Board, สาย, จอ) ระยะเวลาเบิกจ่ายหน้างาน",
     "max": 10,
-    "roles": "Purchase,BU",
+    "roles": "BU Ev, Purchase, Engineering",
     "levels": {
      "5": [
       "หลักฐานเชิงประจักษ์ชัดเจน (ภาพถ่ายคลังสินค้าในไทย, ระบบ ERP บัญชีสต็อก, สัญญาความร่วมมือผู้ผลิต)",
@@ -781,7 +781,7 @@ const CATEGORIES = [
     "title": "เครือข่ายทีมช่างและการตอบสนองตาม SLA (24/48 ชม.)",
     "guide": "ทีมช่างและศูนย์บริการครอบคลุมทั่วประเทศ ระบบ Real Time Monitoring ตลอด 5 ปี ซ่อมเสร็จใน 24 ชม. (เกาะ/ใต้ 48 ชม.)",
     "max": 8,
-    "roles": "Purchase,BU",
+    "roles": "BU Ev, Purchase, Engineering",
     "levels": {
      "5": [
       "ศูนย์บริการและช่างเทคนิคครอบคลุมทุกภูมิภาคทั่วประเทศ",
@@ -808,7 +808,7 @@ const CATEGORIES = [
     "title": "แผนงานบำรุงรักษาเชิงป้องกัน (PM) และมาตรการชิ้นส่วนเสียซ้ำ",
     "guide": "แผนตรวจ PM ทุก 6 เดือน ตลอด 5 ปี และ SOP ชัดเจนในการเปลี่ยนชิ้นส่วนใหม่ยกชุดเมื่อพบการชำรุดเกิน 3 ครั้ง/เดือน",
     "max": 7,
-    "roles": "Purchase,BU",
+    "roles": "BU Ev, Purchase, Engineering",
     "levels": {
      "5": [
       "คู่มือ PM Checklist ละเอียดระดับวิศวกรรม (Insulation Resistance, สอบเทียบเซนเซอร์, ขันบัสบาร์, เทอร์โมสแกน) กำหนดรอบทุก 6 เดือนล่วงหน้า 5 ปี",
@@ -834,12 +834,13 @@ const CATEGORIES = [
 ];
 
 const DEPARTMENTS = ['Engineering', 'BU Ev', 'MMC', 'IT', 'Purchase'];
+// แมปปิ้งผู้ประเมิน 3 แผนกต่อ 1 หมวด
 const CAT_ROLES = {
-  1: ['Engineering', 'BU Ev'],
-  2: ['Engineering', 'BU Ev'],
-  3: ['IT', 'MMC'],
-  4: ['Engineering', 'Purchase'],
-  5: ['Purchase', 'BU Ev']
+  1: ['BU Ev', 'Engineering', 'Purchase'],
+  2: ['BU Ev', 'Engineering', 'MMC'],
+  3: ['MMC', 'IT', 'BU Ev'],
+  4: ['Engineering', 'Purchase', 'BU Ev'],
+  5: ['BU Ev', 'Purchase', 'Engineering']
 };
 const CAT_SHORT = { 1: 'ฮาร์ดแวร์/กายภาพ', 2: 'สมรรถนะการชาร์จ', 3: 'Platform/เชื่อมต่อ', 4: 'ติดตั้ง/Commissioning', 5: 'หลังการขาย/SLA' };
 const LEVEL_LABEL = { 1: 'ต่ำกว่าเกณฑ์', 2: 'ต้องปรับปรุง', 3: 'ตามมาตรฐาน TOR', 4: 'ดี', 5: 'ดีเยี่ยม' };
@@ -888,7 +889,7 @@ const state = {
 };
 const vendorOf = name => state.vendors.find(v => v.supplier === name) || { supplier: name, brand: '', model: '' };
 const roleCats = dept => Object.keys(CAT_ROLES).filter(k => CAT_ROLES[k].includes(dept)).map(Number);
-const enabledItems = () => ITEMS.filter(i => CAT_ROLES[i.cat].includes(state.dept));
+const enabledItems = () => ITEMS.filter(i => (CAT_ROLES[i.cat] || []).includes(state.dept));
 
 /* ───── API (Google Apps Script) ───── */
 async function apiGet(url) {
@@ -1104,8 +1105,10 @@ async function saveEvaluation() {
     if (el) scores[i.id] = Number(el.value);
     else {
       const box = document.querySelector('.q-item[data-item="' + i.id + '"]');
-      box.classList.add('is-missing');
-      if (!firstMissing) firstMissing = box;
+      if (box) {
+        box.classList.add('is-missing');
+        if (!firstMissing) firstMissing = box;
+      }
     }
   });
   if (firstMissing) {
