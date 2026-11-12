@@ -54,6 +54,26 @@
     .main-tabs .nav-link.active { background: var(--navy); color: #fff; }
 
     .panel { background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+
+    /* ── รูปแบบ (All in One / Split type) ── */
+    :root { --r1: #6d4fb3; --r1-bg: #ede8f8; --r2: #047857; --r2-bg: #dff3e7; }
+    .rbadge { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; padding: .15rem .7rem; font-size: .8rem; font-weight: 700; }
+    .rbadge.r1 { background: var(--r1-bg); color: var(--r1); }
+    .rbadge.r2 { background: var(--r2-bg); color: var(--r2); }
+    .nav-chip.round { color: #fff; }
+    .nav-chip.round.r1 { background: var(--r1); }
+    .nav-chip.round.r2 { background: var(--r2); }
+    .round-btn { font-weight: 600; border: 2px solid var(--line); background: #fff; color: var(--muted); padding: .45rem 1rem; }
+    .round-btn .cnt { font-size: .75rem; font-weight: 500; opacity: .85; margin-left: .35rem; }
+    .round-btn.r1.active { background: var(--r1); border-color: var(--r1); color: #fff; }
+    .round-btn.r2.active { background: var(--r2); border-color: var(--r2); color: #fff; }
+    .round-btn:not(.active):hover { border-color: #94a3b8; color: var(--ink); }
+    .round-banner { border-left: 6px solid var(--line); }
+    .round-banner.r1 { border-left-color: var(--r1); background: linear-gradient(90deg, var(--r1-bg), #fff 40%); }
+    .round-banner.r2 { border-left-color: var(--r2); background: linear-gradient(90deg, var(--r2-bg), #fff 40%); }
+    tr.round-head-r1 th { border-bottom: 3px solid var(--r1); }
+    tr.round-head-r2 th { border-bottom: 3px solid var(--r2); }
+    .delta-up { color: var(--green-dark); font-weight: 600; } .delta-down { color: var(--rose); font-weight: 600; } .delta-flat { color: var(--muted); }
     .muted { color: var(--muted); }
     .fs-7 { font-size: .875rem; }
 
@@ -144,6 +164,7 @@
       </div>
     </div>
     <span class="conn demo" id="connPill"><span class="dot"></span><span id="connText">โหมดสาธิต</span></span>
+    <span class="nav-chip round r2 d-none" id="navRound"><i class="fa-solid fa-flag-checkered"></i><span id="navRoundText"></span></span>
     <span class="nav-chip dept d-none" id="navDept"><i class="fa-solid fa-user-tag"></i><span id="navDeptText"></span></span>
     <span class="nav-chip vendor d-none" id="navVendor"><i class="fa-solid fa-building"></i><span id="navVendorText"></span></span>
     <button class="btn btn-sm btn-light-outline d-none" id="btnChange"><i class="fa-solid fa-right-left me-1"></i>เปลี่ยน Vendor/แผนก</button>
@@ -158,6 +179,11 @@
     <a href="#" id="demoSettingsLink" class="alert-link ms-1">ตั้งค่า Web App URL</a>
   </div>
 
+  <div class="alert alert-danger d-none fs-7 py-2" id="backendWarn">
+    <i class="fa-solid fa-circle-exclamation me-2"></i><strong>Apps Script ยังเป็นเวอร์ชันเก่า</strong> – ไม่ได้ส่งคอลัมน์ Round/รูปแบบ จาก Sheet Vendor มา ทุก Supplier จึงถูกนับเป็น All in One
+    ให้วางโค้ด <code>Code.gs</code> ใหม่ แล้ว Deploy → Manage deployments → Edit → <strong>New version</strong>
+  </div>
+
   <ul class="nav nav-pills main-tabs gap-2 mb-3" id="mainTabs" role="tablist">
     <li class="nav-item" role="presentation"><button class="nav-link active" id="tabFormBtn" data-bs-toggle="pill" data-bs-target="#paneForm" type="button" role="tab"><i class="fa-solid fa-clipboard-list me-2"></i>แบบประเมิน</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" id="tabDashBtn" data-bs-toggle="pill" data-bs-target="#paneDash" type="button" role="tab"><i class="fa-solid fa-chart-pie me-2"></i>Summary Dashboard</button></li>
@@ -170,7 +196,7 @@
       <div class="panel p-3 mb-3">
         <div class="row g-3 align-items-center">
           <div class="col-lg-7">
-            <div class="muted fs-7">กำลังประเมิน</div>
+            <div class="muted fs-7">กำลังประเมิน <span class="rbadge r2 ms-1" id="formRoundBadge"></span></div>
             <div class="fs-5 fw-bold" id="formSupplier">–</div>
             <div class="fs-7 muted" id="formModel">–</div>
           </div>
@@ -202,6 +228,19 @@
 
     <!-- ═════════════ Summary Dashboard ═════════════ -->
     <div class="tab-pane fade" id="paneDash" role="tabpanel">
+      <div class="panel p-3 mb-3">
+        <div class="fs-7 muted mb-2">เลือกรูปแบบที่ต้องการดูผล (แยกกันเด็ดขาด)</div>
+        <div class="btn-group" id="dashRoundGroup" role="group" aria-label="เลือกรูปแบบ"></div>
+      </div>
+
+      <div class="panel round-banner r2 p-3 mb-3" id="roundBanner">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="rbadge r2" id="roundBannerBadge"></span>
+          <strong id="roundBannerTitle"></strong>
+          <span class="fs-7 muted" id="roundBannerSub"></span>
+        </div>
+      </div>
+
       <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
         <div>
           <label for="dashSupplier" class="form-label fs-7 mb-1">Supplier ที่ต้องการดูผล</label>
@@ -212,7 +251,7 @@
       </div>
 
       <div class="alert alert-light border fs-7 d-none" id="dashEmpty">
-        <i class="fa-regular fa-folder-open me-2"></i>ยังไม่มีผลประเมินของ Supplier นี้ – เริ่มได้ที่แท็บ “แบบประเมิน”
+        <i class="fa-regular fa-folder-open me-2"></i><span id="dashEmptyText">ยังไม่มีผลประเมินของ Supplier นี้ – เริ่มได้ที่แท็บ “แบบประเมิน”</span>
       </div>
 
       <div class="row g-3 mb-3">
@@ -242,7 +281,7 @@
 
       <div class="row g-3 mb-3">
         <div class="col-lg-6"><div class="panel p-3 h-100">
-          <h2 class="fs-6 fw-bold mb-2">คะแนนแต่ละหมวดเทียบกับคะแนนเต็ม</h2>
+          <h2 class="fs-6 fw-bold mb-2">คะแนนแต่ละหมวดเทียบกับคะแนนเต็ม <span class="fs-7 fw-normal muted" id="radarNote"></span></h2>
           <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
         </div></div>
         <div class="col-lg-6"><div class="panel p-3 h-100">
@@ -276,10 +315,10 @@
       </div>
 
       <div class="panel p-3">
-        <h2 class="fs-6 fw-bold mb-2">เปรียบเทียบทุก Supplier</h2>
+        <h2 class="fs-6 fw-bold mb-2" id="compareTitle">เปรียบเทียบทุก Supplier</h2>
         <div class="table-responsive">
           <table class="table align-middle mb-0">
-            <thead><tr><th>Supplier</th><th>Brand / Model</th><th class="text-end">คะแนนรวม</th><th class="text-center">เกรด</th><th class="text-end">หมวด 5 (SLA)</th><th class="text-center">แผนกที่ประเมิน</th></tr></thead>
+            <thead id="compareHead"></thead>
             <tbody id="compareBody"></tbody>
           </table>
         </div>
@@ -296,6 +335,11 @@
         <h2 class="modal-title fs-5 fw-bold" id="selectTitle">เลือกแผนกและ Supplier ที่จะประเมิน</h2>
       </div>
       <div class="modal-body pt-0">
+        <div class="mb-3">
+          <label for="selRound" class="form-label fw-semibold">รูปแบบ (All in One / Split type)</label>
+          <select id="selRound" class="form-select"></select>
+          <div class="fs-7 muted mt-1">ผลประเมินของแต่ละรูปแบบจะแยกกัน – ไม่เขียนทับกัน</div>
+        </div>
         <div class="mb-3">
           <label for="selDept" class="form-label fw-semibold">แผนกผู้ประเมิน</label>
           <select id="selDept" class="form-select">
@@ -833,6 +877,9 @@ const CATEGORIES = [
  }
 ];
 
+/* รูปแบบที่เปิดให้ "ประเมิน" ตอนนี้ (All in One ประเมินจบแล้ว – ยังดูผลได้ที่ Dashboard)
+   ถ้าอยากเปิดให้ประเมินทั้งสองแบบ ให้ใส่ ['All in One', 'Split type'] */
+const SELECTABLE_ROUNDS = ['Split type'];
 const DEPARTMENTS = ['Engineering', 'BU Ev', 'MMC', 'IT', 'Purchase'];
 const CAT_ROLES = {
   1: ['Engineering', 'BU Ev'],
@@ -847,12 +894,15 @@ const PASS_TOTAL = 80;      // คะแนนรวม >= 80%
 const PASS_CAT5 = 18.75;    // หมวด 5 >= 18.75 / 25
 
 const MOCK_VENDORS = [
-  { supplier: 'Delta green', brand: 'Delta', model: 'EID-E200TSEEA01 (200kW)' },
-  { supplier: 'EGAT Diamond Service Co., Ltd.', brand: 'EDS', model: 'FD180A (180kW)' },
-  { supplier: 'CTMS Technology Co.,Ltd', brand: 'Encharg', model: 'ENC20025DC-200kW' },
-  { supplier: 'Polytechnology co.,ltd', brand: 'SCU', model: 'EVMS-180P' },
-  { supplier: 'Solar world Co.,Ltd /Pun EV', brand: 'Sinexcel', model: 'SEC1000/180Y-HH-PA' },
-  { supplier: 'Entech Energy Co., Ltd.', brand: 'Star Charge', model: 'Titan V5 180kW / DC1800EN195012' }
+  { round: 'All in One', supplier: 'Delta green', brand: 'Delta', model: 'EID-E200TSEEA01 (200kW)' },
+  { round: 'All in One', supplier: 'EGAT Diamond Service Co., Ltd.', brand: 'EDS', model: 'FD180A (180kW)' },
+  { round: 'All in One', supplier: 'CTMS Technology Co.,Ltd', brand: 'Encharg', model: 'ENC20025DC-200kW' },
+  { round: 'All in One', supplier: 'Polytechnology co.,ltd', brand: 'SCU', model: 'EVMS-180P' },
+  { round: 'All in One', supplier: 'Solar world Co.,Ltd /Pun EV', brand: 'Sinexcel', model: 'SEC1000/180Y-HH-PA' },
+  { round: 'All in One', supplier: 'Entech Energy Co., Ltd.', brand: 'Star Charge', model: 'Titan V5 180kW / DC1800EN195012' },
+  { round: 'Split type', supplier: 'CTMS Technology Co.,Ltd', brand: 'Encharg', model: '' },
+  { round: 'Split type', supplier: 'Entech Energy Co., Ltd.', brand: 'Star Charge', model: '' },
+  { round: 'Split type', supplier: 'Polytechnology co.,ltd', brand: '', model: '' }
 ];
 
 const ITEMS = CATEGORIES.flatMap(c => c.items.map(i => Object.assign({}, i, { cat: c.id })));
@@ -881,12 +931,26 @@ const fmtDateTime = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.t
 
 /* ───── State ───── */
 const state = {
+  round: null, dashRound: null,
   dept: null, supplier: null, evaluator: '',
   vendors: [], evals: [],
   scriptUrl: '', dashSupplier: null, lastSync: null,
   isDashUnlocked: false
 };
-const vendorOf = name => state.vendors.find(v => v.supplier === name) || { supplier: name, brand: '', model: '' };
+const vendorOf = (name, round) => state.vendors.find(v => v.supplier === name && v.round === (round || state.round)) || { supplier: name, round: round || state.round, brand: '', model: '' };
+const roundsList = () => { const r = Array.from(new Set(state.vendors.map(v => v.round))); return r.length ? r : ['All in One']; };
+/* ค่าในคอลัมน์ "รูปแบบ" (เดิมคือ Round): ว่าง/1 = All in One, 2 = Split type */
+const normRound = v => { const t = String(v == null ? '' : v).trim(); if (!t || t === '1') return 'All in One'; if (t === '2') return 'Split type'; return t; };
+const latestRound = () => { const r = roundsList(); return r[r.length - 1]; };
+const selectableRounds = () => { const r = roundsList().filter(x => SELECTABLE_ROUNDS.includes(x)); return r.length ? r : roundsList(); };
+const vendorsOfRound = r => state.vendors.filter(v => v.round === r);
+const roundLabel = r => String(r);
+const rcls = r => roundsList().indexOf(r) === 0 ? 'r1' : 'r2';
+/* ข้อมูลเก่าที่ไม่มีคอลัมน์รูปแบบ = All in One */
+function normalizeData() {
+  state.vendors = state.vendors.map(v => Object.assign({}, v, { round: normRound(v.round) }));
+  state.evals = state.evals.map(e => Object.assign({}, e, { round: normRound(e.round) }));
+}
 const roleCats = dept => Object.keys(CAT_ROLES).filter(k => CAT_ROLES[k].includes(dept)).map(Number);
 const enabledItems = () => ITEMS.filter(i => CAT_ROLES[i.cat].includes(state.dept));
 
@@ -900,12 +964,18 @@ async function apiGet(url) {
   return data;
 }
 async function apiPost(payload) {
-  const res = await fetch(state.scriptUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-    body: 'data=' + encodeURIComponent(JSON.stringify(payload))
-  });
-  const data = await res.json();
+  let res;
+  try {
+    res = await fetch(state.scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: 'data=' + encodeURIComponent(JSON.stringify(payload))
+    });
+  } catch (e) {
+    throw new Error('ติดต่อ Apps Script ไม่ได้ (Failed to fetch) – ตรวจว่า Deploy เป็น “Anyone”, กด Authorize สคริปต์แล้ว และใช้ URL /exec ล่าสุด');
+  }
+  let data;
+  try { data = await res.json(); } catch (e) { throw new Error('Apps Script ตอบกลับไม่ใช่ JSON – มักเกิดจากยังไม่ได้ Authorize หรือสคริปต์มี error'); }
   if (data.status !== 'success') throw new Error(data.message || 'บันทึกไม่สำเร็จ');
   return data;
 }
@@ -920,7 +990,11 @@ async function loadAll() {
     const data = await apiGet();
     state.vendors = (data.vendors && data.vendors.length) ? data.vendors : MOCK_VENDORS.slice();
     state.evals = data.evaluations || [];
+    state.backendOld = !!state.vendors.length && state.vendors.some(v => v.round == null || v.round === '') && state.vendors !== MOCK_VENDORS;
   }
+  if (!state.scriptUrl) state.backendOld = false;
+  normalizeData();
+  $('backendWarn').classList.toggle('d-none', !state.backendOld);
   state.lastSync = new Date();
 }
 function setConn(mode) {
@@ -952,8 +1026,8 @@ async function syncAll(manual) {
 /* ───── Scoring ───── */
 function gradeOf(total) { return total >= 90 ? 'A' : total >= 80 ? 'B' : total >= 70 ? 'C' : total >= 60 ? 'D' : 'F'; }
 
-function summarize(supplier) {
-  const evs = state.evals.filter(e => e.supplier === supplier);
+function summarize(supplier, round) {
+  const evs = state.evals.filter(e => e.supplier === supplier && e.round === round);
   const items = ITEMS.map(it => {
     const byDept = {};
     evs.forEach(e => { const v = e.scores && e.scores[it.id]; if (v != null && v !== '') byDept[e.department] = Number(v); });
@@ -970,6 +1044,8 @@ function summarize(supplier) {
   const doneDepts = DEPARTMENTS.filter(d => evs.some(e => e.department === d));
   return { evs, items, cats, total: sum(cats.map(c => c.pts)), doneDepts, complete: doneDepts.length === DEPARTMENTS.length, hasData: evs.length > 0 };
 }
+/* รูปแบบต่างกันไม่นำมาเทียบ/รวมกัน */
+function prevSummary() { return null; }
 function decisionOf(s) {
   if (!s.hasData) return { state: 'none' };
   const c5 = s.cats.find(c => c.id === 5);
@@ -980,18 +1056,36 @@ function decisionOf(s) {
 /* ───── Selection modal ───── */
 let selModal, settingsModal, passcodeModal;
 function optionLabel(v) { return v.supplier + (v.brand ? ' — ' + v.brand : '') + (v.model ? ' (' + v.model + ')' : ''); }
+function fillRoundSelect(keepRound) {
+  const rs = $('selRound'), rounds = selectableRounds();
+  const want = keepRound || rs.value || state.round || rounds[rounds.length - 1];
+  rs.innerHTML = rounds.map(r => '<option value="' + esc(r) + '">' + roundLabel(r) + ' (' + vendorsOfRound(r).length + ' Supplier)</option>').join('');
+  rs.value = String(rounds.includes(want) ? want : rounds[rounds.length - 1]);
+}
 function fillVendorSelects() {
+  fillRoundSelect();
+  const selRound = $('selRound').value || selectableRounds()[0];
+  const list = vendorsOfRound(selRound);
   const sel = $('selVendor'), keep = sel.value || state.supplier || '';
-  sel.innerHTML = (state.vendors.length ? '<option value="">เลือก Supplier…</option>' : '<option value="">กำลังโหลดรายชื่อ…</option>') + state.vendors.map(v => '<option value="' + esc(v.supplier) + '">' + esc(optionLabel(v)) + '</option>').join('');
-  sel.value = state.vendors.some(v => v.supplier === keep) ? keep : '';
+  sel.innerHTML = (state.vendors.length ? '<option value="">เลือก Supplier…</option>' : '<option value="">กำลังโหลดรายชื่อ…</option>') + list.map(v => '<option value="' + esc(v.supplier) + '">' + esc(optionLabel(v)) + '</option>').join('');
+  sel.value = list.some(v => v.supplier === keep) ? keep : '';
 
+  // Dashboard: ปุ่มเลือกรอบ + รายชื่อ Supplier เฉพาะรอบที่เลือก
+  if (!roundsList().includes(state.dashRound)) state.dashRound = state.round && roundsList().includes(state.round) ? state.round : latestRound();
+  renderRoundButtons();
+  const dl = vendorsOfRound(state.dashRound);
   const ds = $('dashSupplier'), keepD = state.dashSupplier || state.supplier || '';
-  ds.innerHTML = state.vendors.map(v => '<option value="' + esc(v.supplier) + '">' + esc(optionLabel(v)) + '</option>').join('');
-  state.dashSupplier = state.vendors.some(v => v.supplier === keepD) ? keepD : (state.vendors[0] && state.vendors[0].supplier);
+  ds.innerHTML = dl.map(v => '<option value="' + esc(v.supplier) + '">' + esc(optionLabel(v)) + '</option>').join('');
+  state.dashSupplier = dl.some(v => v.supplier === keepD) ? keepD : (dl[0] && dl[0].supplier);
   ds.value = state.dashSupplier || '';
   checkSelValid();
 }
-function checkSelValid() { $('selStart').disabled = !($('selDept').value && $('selVendor').value); }
+function renderRoundButtons() {
+  $('dashRoundGroup').innerHTML = roundsList().map(r =>
+    '<button type="button" class="btn round-btn ' + rcls(r) + (r === state.dashRound ? ' active' : '') + '" data-round="' + esc(r) + '">' +
+    '<i class="fa-solid fa-flag-checkered me-1"></i>' + roundLabel(r) + '<span class="cnt">' + vendorsOfRound(r).length + ' ราย</span></button>').join('');
+}
+function checkSelValid() { $('selStart').disabled = !($('selRound').value && $('selDept').value && $('selVendor').value); }
 function updateDeptHint() {
   const d = $('selDept').value, hint = $('selDeptHint');
   if (!d) { hint.classList.add('d-none'); return; }
@@ -1000,6 +1094,7 @@ function updateDeptHint() {
 }
 function openSelection() {
   $('selDept').value = state.dept || '';
+  fillRoundSelect(state.round);
   fillVendorSelects();
   $('selVendor').value = state.supplier || '';
   $('selName').value = state.evaluator || '';
@@ -1008,11 +1103,13 @@ function openSelection() {
   selModal.show();
 }
 function startSession() {
+  state.round = $('selRound').value;
   state.dept = $('selDept').value;
   state.supplier = $('selVendor').value;
   state.evaluator = $('selName').value.trim();
+  state.dashRound = state.round;
   state.dashSupplier = state.supplier;
-  store.set('sessionStorage', 'ev_session', JSON.stringify({ dept: state.dept, supplier: state.supplier, evaluator: state.evaluator }));
+  store.set('sessionStorage', 'ev_session', JSON.stringify({ round: state.round, dept: state.dept, supplier: state.supplier, evaluator: state.evaluator }));
   selModal.hide();
   renderAll();
   bootstrap.Tab.getOrCreateInstance($('tabFormBtn')).show();
@@ -1021,8 +1118,10 @@ function startSession() {
 /* ───── Render: nav + form ───── */
 function renderNav() {
   const has = !!(state.dept && state.supplier);
-  ['navDept', 'navVendor', 'btnChange'].forEach(id => $(id).classList.toggle('d-none', !has));
-  if (has) { $('navDeptText').textContent = state.dept; $('navVendorText').textContent = state.supplier; $('navVendor').title = state.supplier; }
+  ['navRound', 'navDept', 'navVendor', 'btnChange'].forEach(id => $(id).classList.toggle('d-none', !has));
+  if (has) {
+    $('navRound').className = 'nav-chip round ' + rcls(state.round);
+    $('navRoundText').textContent = '' + roundLabel(state.round); $('navDeptText').textContent = state.dept; $('navVendorText').textContent = state.supplier; $('navVendor').title = state.supplier; }
 }
 const levelText = t => String(t).replace(/^\[เกณฑ์ขั้นต่ำ TOR\]\s*/, '');
 
@@ -1054,7 +1153,10 @@ function catHtml(c) {
     '<div class="collapse" id="catBody' + c.id + '"><div class="cat-body pt-3">' + items + '</div></div></section>';
 }
 function renderForm() {
-  const v = vendorOf(state.supplier);
+  const v = vendorOf(state.supplier, state.round);
+  const fb = $('formRoundBadge');
+  fb.className = 'rbadge ms-1 ' + rcls(state.round || 1);
+  fb.innerHTML = state.round ? '<i class="fa-solid fa-flag-checkered"></i>' + roundLabel(state.round) : '';
   $('formSupplier').textContent = state.supplier || '–';
   $('formModel').textContent = [v.brand, v.model].filter(Boolean).join(' · ') || '–';
   $('formDept').textContent = state.dept || '–';
@@ -1063,7 +1165,7 @@ function renderForm() {
   prefillForm();
   updateProgress();
 }
-function myEval() { return state.evals.find(e => e.supplier === state.supplier && e.department === state.dept); }
+function myEval() { return state.evals.find(e => e.supplier === state.supplier && e.department === state.dept && e.round === state.round); }
 function prefillForm() {
   const mine = myEval();
   $('evalComment').value = mine ? (mine.comment || '') : '';
@@ -1078,7 +1180,7 @@ function prefillForm() {
 function updateExistingNotice() {
   const mine = state.dept && state.supplier ? myEval() : null, box = $('existingNotice');
   if (mine) {
-    box.innerHTML = '<i class="fa-solid fa-pen-to-square me-2"></i>แผนก ' + esc(state.dept) + ' เคยประเมิน Supplier นี้แล้ว' + (mine.updatedAt ? ' (บันทึกล่าสุด ' + esc(fmtDateTime(mine.updatedAt)) + ')' : '') + ' – การบันทึกครั้งนี้จะเขียนทับข้อมูลเดิม';
+    box.innerHTML = '<i class="fa-solid fa-pen-to-square me-2"></i>แผนก ' + esc(state.dept) + ' เคยประเมิน Supplier นี้ใน ' + roundLabel(state.round) + ' แล้ว' + (mine.updatedAt ? ' (บันทึกล่าสุด ' + esc(fmtDateTime(mine.updatedAt)) + ')' : '') + ' – การบันทึกครั้งนี้จะเขียนทับเฉพาะผลของ ' + roundLabel(state.round) + ' (ไม่กระทบรูปแบบอื่น)';
     box.classList.remove('d-none');
   } else box.classList.add('d-none');
 }
@@ -1114,8 +1216,8 @@ async function saveEvaluation() {
     return;
   }
 
-  const v = vendorOf(state.supplier);
-  const payload = { supplier: state.supplier, brand: v.brand, model: v.model, department: state.dept, evaluator: state.evaluator, comment: $('evalComment').value.trim(), scores };
+  const v = vendorOf(state.supplier, state.round);
+  const payload = { round: state.round, supplier: state.supplier, brand: v.brand, model: v.model, department: state.dept, evaluator: state.evaluator, comment: $('evalComment').value.trim(), scores };
   const btn = $('btnSave'), original = btn.innerHTML;
   btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังบันทึก…';
 
@@ -1126,20 +1228,21 @@ async function saveEvaluation() {
       action = r.action; updatedAt = r.updatedAt || updatedAt;
     } else {
       const list = demoLoad();
-      const idx = list.findIndex(e => e.supplier === payload.supplier && e.department === payload.department);
+      const idx = list.findIndex(e => e.supplier === payload.supplier && e.department === payload.department && normRound(e.round) === payload.round);
       const rec = Object.assign({}, payload, { updatedAt });
       if (idx !== -1) { list[idx] = rec; action = 'updated'; } else { list.push(rec); action = 'inserted'; }
       demoSave(list);
     }
     // อัปเดตข้อมูลในหน้าทันที
     const rec = Object.assign({}, payload, { updatedAt });
-    const i2 = state.evals.findIndex(e => e.supplier === rec.supplier && e.department === rec.department);
+    const i2 = state.evals.findIndex(e => e.supplier === rec.supplier && e.department === rec.department && e.round === rec.round);
     if (i2 !== -1) state.evals[i2] = rec; else state.evals.push(rec);
     state.lastSync = new Date();
+    state.dashRound = state.round;
     state.dashSupplier = state.supplier;
-    $('dashSupplier').value = state.supplier;
+    fillVendorSelects();
     renderDashboard(); updateExistingNotice();
-    toast(action === 'updated' ? 'อัปเดตผลการประเมินเดิมเรียบร้อย' : 'บันทึกผลการประเมินเรียบร้อย', 'success');
+    toast((action === 'updated' ? 'อัปเดตผลการประเมินเดิมเรียบร้อย' : 'บันทึกผลการประเมินเรียบร้อย') + ' (' + roundLabel(state.round) + ')', 'success');
     if (state.scriptUrl) syncAll(false);   // ดึงข้อมูลรวมจากทุกแผนกมาอัปเดตอีกครั้ง
   } catch (err) {
     console.error(err);
@@ -1157,14 +1260,26 @@ function renderDashboard() {
   const name = state.dashSupplier;
   $('lastSync').textContent = state.lastSync ? 'อัปเดตข้อมูลล่าสุด ' + fmtTime(state.lastSync) : '';
   if (!name) return;
-  const s = summarize(name), dec = decisionOf(s);
+  const R = state.dashRound, prev = prevSummary(name, R);
+  const s = summarize(name, R), dec = decisionOf(s);
   $('dashEmpty').classList.toggle('d-none', s.hasData);
+  $('dashEmptyText').textContent = 'ยังไม่มีผลประเมินของ Supplier นี้ใน ' + roundLabel(R) + ' – เริ่มได้ที่แท็บ “แบบประเมิน”';
+
+  // Banner รูปแบบ
+  const rv = vendorsOfRound(R), done = rv.filter(v => state.evals.some(e => e.supplier === v.supplier && e.round === R)).length;
+  $('roundBanner').className = 'panel round-banner p-3 mb-3 ' + rcls(R);
+  $('roundBannerBadge').className = 'rbadge ' + rcls(R);
+  $('roundBannerBadge').innerHTML = '<i class="fa-solid fa-flag-checkered"></i>' + roundLabel(R);
+  $('roundBannerTitle').textContent = 'กำลังดูผล ' + roundLabel(R) + ' · ' + (name || '');
+  $('roundBannerSub').textContent = 'Supplier ในรูปแบบนี้ ' + rv.length + ' ราย · เริ่มประเมินแล้ว ' + done + ' ราย' + ' · ผลแยกจากรูปแบบอื่น';
 
   // KPI: คะแนนรวม / เกรด
   const g = gradeOf(s.total);
   $('kpiTotal').textContent = s.hasData ? s.total.toFixed(1) + '%' : '–';
   $('kpiBar').style.width = (s.hasData ? s.total : 0) + '%';
-  $('kpiTotalSub').textContent = s.hasData ? s.total.toFixed(2) + ' / 100 คะแนน' + (s.complete ? '' : ' (เบื้องต้น – ยังประเมินไม่ครบ)') : 'ยังไม่มีข้อมูล';
+  let subTxt = s.hasData ? s.total.toFixed(2) + ' / 100 คะแนน' + (s.complete ? '' : ' (เบื้องต้น – ยังประเมินไม่ครบ)') : 'ยังไม่มีข้อมูล';
+  if (s.hasData && prev) { const d = s.total - prev.total; subTxt += ' · ' + roundLabel(prev.round) + ': ' + prev.total.toFixed(1) + '% (' + (d >= 0 ? '▲ +' : '▼ ') + d.toFixed(1) + ')'; }
+  $('kpiTotalSub').textContent = subTxt;
   const gEl = $('kpiGrade');
   gEl.textContent = s.hasData ? g : '–';
   gEl.className = 'kpi-value' + (s.hasData ? ' grade-' + g : '');
@@ -1194,21 +1309,30 @@ function renderDashboard() {
       type: 'radar',
       data: { labels, datasets: [
         { label: 'คะแนนที่ได้', data, backgroundColor: 'rgba(16,185,129,.22)', borderColor: '#10b981', borderWidth: 2, pointBackgroundColor: '#10b981', pointRadius: 4 },
+        { label: 'รอบก่อน', data: [0, 0, 0, 0, 0], hidden: true, backgroundColor: 'rgba(109,79,179,.10)', borderColor: '#6d4fb3', borderWidth: 2, borderDash: [2, 3], pointBackgroundColor: '#6d4fb3', pointRadius: 3 },
         { label: 'คะแนนเต็ม', data: [100, 100, 100, 100, 100], backgroundColor: 'transparent', borderColor: '#0f2b48', borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0 }
       ] },
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, callback: v => v + '%', backdropColor: 'transparent' }, pointLabels: { font: { size: 12 } } } },
-        plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: ctx => {
-          const c = radar._cats[ctx.dataIndex];
-          return ctx.datasetIndex === 0 ? ' ' + c.pts.toFixed(2) + ' / ' + c.max + ' คะแนน (' + c.pct.toFixed(1) + '%)' : ' เต็ม ' + c.max + ' คะแนน';
+        plugins: { legend: { position: 'bottom', labels: { filter: it => !(it.datasetIndex === 1 && radar && radar._noPrev) } }, tooltip: { callbacks: { label: ctx => {
+          const c = (ctx.datasetIndex === 1 ? radar._prevCats : radar._cats)[ctx.dataIndex];
+          if (ctx.datasetIndex === 2) return ' เต็ม ' + c.max + ' คะแนน';
+          return ' ' + c.pts.toFixed(2) + ' / ' + c.max + ' คะแนน (' + c.pct.toFixed(1) + '%)';
         } } } }
       }
     });
   }
   radar._cats = s.cats;
+  radar._prevCats = prev ? prev.cats : s.cats;
+  radar._noPrev = !(prev && prev.hasData);
+  radar.data.datasets[0].label = '' + roundLabel(R);
   radar.data.datasets[0].data = data;
+  radar.data.datasets[1].label = 'POC ' + (prev ? roundLabel(prev.round) : 'รอบก่อน');
+  radar.data.datasets[1].data = prev ? prev.cats.map(c => +c.pct.toFixed(1)) : [0, 0, 0, 0, 0];
+  radar.data.datasets[1].hidden = radar._noPrev;
   radar.update();
+  $('radarNote').textContent = prev ? '(เส้นประม่วง = ' + roundLabel(prev.round) + ' เพื่อเทียบ)' : '';
 
   // ตารางรายหมวด
   $('catTableBody').innerHTML = s.cats.map(c => {
@@ -1249,16 +1373,28 @@ function renderDashboard() {
     `).join('');
   }
 
-  // เปรียบเทียบทุก Supplier
-  const rows = state.vendors.map(v => ({ v, s: summarize(v.supplier) })).sort((a, b) => b.s.total - a.s.total);
-  $('compareBody').innerHTML = rows.map(({ v, s: x }) => {
+  // เปรียบเทียบ Supplier เฉพาะรอบที่เลือก
+  const hasPrevCol = false;
+  $('compareTitle').innerHTML = 'เปรียบเทียบ Supplier <span class="rbadge ' + rcls(R) + ' ms-1">' + roundLabel(R) + '</span>';
+  $('compareHead').innerHTML = '<tr class="round-head-' + rcls(R) + '"><th>Supplier</th><th>Brand / Model</th><th class="text-end">คะแนนรวม</th><th class="text-center">เกรด</th>' +
+    '<th class="text-end">หมวด 5 (SLA)</th><th class="text-center">แผนกที่ประเมิน</th>' + (hasPrevCol ? '<th class="text-end">รอบก่อน</th><th class="text-end">เปลี่ยนแปลง</th>' : '') + '</tr>';
+  const rows = vendorsOfRound(R).map(v => ({ v, s: summarize(v.supplier, R), p: prevSummary(v.supplier, R) })).sort((a, b) => b.s.total - a.s.total);
+  $('compareBody').innerHTML = rows.map(({ v, s: x, p }) => {
     const gg = gradeOf(x.total), c5 = x.cats.find(c => c.id === 5);
+    let prevCols = '';
+    if (hasPrevCol) {
+      if (p && p.hasData && x.hasData) {
+        const d = x.total - p.total, cls = d > 0.05 ? 'delta-up' : d < -0.05 ? 'delta-down' : 'delta-flat';
+        prevCols = '<td class="text-end muted">' + p.total.toFixed(1) + '% <span class="small">(' + roundLabel(p.round) + ')</span></td>' +
+          '<td class="text-end ' + cls + '">' + (d > 0.05 ? '▲ +' : d < -0.05 ? '▼ ' : '± ') + d.toFixed(1) + '</td>';
+      } else prevCols = '<td class="text-end muted">' + (p && p.hasData ? p.total.toFixed(1) + '%' : '–') + '</td><td class="text-end muted">–</td>';
+    }
     return '<tr class="row-click' + (v.supplier === name ? ' row-current' : '') + '" data-supplier="' + esc(v.supplier) + '">' +
       '<td class="fw-semibold">' + esc(v.supplier) + '</td><td class="muted">' + esc([v.brand, v.model].filter(Boolean).join(' · ')) + '</td>' +
       '<td class="text-end">' + (x.hasData ? x.total.toFixed(1) + '%' : '–') + '</td>' +
       '<td class="text-center fw-bold ' + (x.hasData ? 'grade-' + gg : '') + '">' + (x.hasData ? gg : '–') + '</td>' +
       '<td class="text-end">' + (x.hasData ? c5.pts.toFixed(2) + ' / 25' : '–') + '</td>' +
-      '<td class="text-center">' + x.doneDepts.length + '/5</td></tr>';
+      '<td class="text-center">' + x.doneDepts.length + '/5</td>' + prevCols + '</tr>';
   }).join('');
 }
 
@@ -1280,7 +1416,9 @@ async function testUrl() {
   try {
     const d = await apiGet(url);
     out.className = 'fs-7 mt-3 text-success';
-    out.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>เชื่อมต่อสำเร็จ – พบ Supplier ' + (d.vendors || []).length + ' ราย, ผลประเมิน ' + (d.evaluations || []).length + ' รายการ';
+    const noRound = (d.vendors || []).length && (d.vendors || []).some(v => v.round == null || v.round === '');
+    out.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>เชื่อมต่อสำเร็จ – พบ Supplier ' + (d.vendors || []).length + ' ราย, ผลประเมิน ' + (d.evaluations || []).length + ' รายการ' +
+      (noRound ? '<div class="text-danger mt-1"><i class="fa-solid fa-triangle-exclamation me-1"></i>แต่ Apps Script ยังเป็นเวอร์ชันเก่า (ไม่ส่งรูปแบบ All in One / Split type) – โปรด Deploy Code.gs ใหม่</div>' : '');
   } catch (err) {
     out.className = 'fs-7 mt-3 text-danger';
     out.innerHTML = '<i class="fa-solid fa-circle-xmark me-1"></i>เชื่อมต่อไม่สำเร็จ: ' + esc(err.message) + ' (ตรวจว่า Deploy เป็น “Anyone” และใช้ URL ที่ลงท้ายด้วย /exec)';
@@ -1298,6 +1436,13 @@ async function saveUrl() {
 /* ───── Init ───── */
 function bindEvents() {
   $('selDept').addEventListener('change', () => { updateDeptHint(); checkSelValid(); });$('selVendor').addEventListener('change', checkSelValid);
+  $('selRound').addEventListener('change', () => { $('selVendor').value = ''; fillVendorSelects(); });
+  $('dashRoundGroup').addEventListener('click', e => {
+    const b = e.target.closest('button[data-round]'); if (!b) return;
+    state.dashRound = b.dataset.round;
+    if (!vendorsOfRound(state.dashRound).some(v => v.supplier === state.dashSupplier)) state.dashSupplier = null;
+    fillVendorSelects(); renderDashboard();
+  });
   $('selStart').addEventListener('click', startSession);$('selCancel').addEventListener('click', () => selModal.hide());
   $('btnChange').addEventListener('click', openSelection);$('btnSettings').addEventListener('click', openSettings);
   $('demoSettingsLink').addEventListener('click', e => { e.preventDefault(); openSettings(); });$('selOpenSettings').addEventListener('click', e => {
@@ -1369,15 +1514,19 @@ async function init() {
     setConn(state.scriptUrl ? 'ok' : 'demo');
   } catch (err) {
     console.error(err);
-    state.vendors = MOCK_VENDORS.slice();
+    state.vendors = MOCK_VENDORS.slice(); normalizeData();
     setConn('error');
     toast('เชื่อมต่อ Google Sheets ไม่สำเร็จ: ' + err.message, 'danger');
   }
 
-  if (sess && state.vendors.some(v => v.supplier === sess.supplier)) {
+  const sessRound = sess ? (sess.round ? normRound(sess.round) : latestRound()) : null;
+  if (sess && state.vendors.some(v => v.supplier === sess.supplier && v.round === sessRound)) {
+    state.round = sessRound; state.dashRound = sessRound;
     state.dept = sess.dept; state.supplier = sess.supplier; state.evaluator = sess.evaluator || ''; state.dashSupplier = sess.supplier;
     fillVendorSelects(); renderAll();
   } else {
+    $('selRound').innerHTML = '';           // ให้ค่าเริ่มต้น = รูปแบบสุดท้ายในรายชื่อ (Split type)
+    if (!sess) state.dashRound = latestRound();
     fillVendorSelects(); renderAll();
     if (sess) selModal.show();
   }
